@@ -72,6 +72,9 @@ private:
     void call_send_callback(
         std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe);
 
+    void call_connect_callback(
+        std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe);
+
     ReceivePostAction call_recv_handler_stream(const uint8_t* buffer,
         std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe);
 

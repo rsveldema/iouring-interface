@@ -262,6 +262,31 @@ void IOUring::call_send_callback(
     work_item->call_send_callback();
 }
 
+void IOUring::call_connect_callback(
+    std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
+{
+    LOG_DEBUG(get_logger(), "=======> CONNECT CALLBACK: %d\n", cqe->res);
+    if (cqe->res < 0)
+    {
+        LOG_ERROR(get_logger(), "recv cqe bad res %d\n", cqe->res);
+        if (cqe->res == -EFAULT || cqe->res == -EINVAL)
+        {
+            LOG_ERROR(
+                get_logger(), "NB: This requires a kernel version >= 6.0\n");
+        }
+        return;
+    }
+
+    const int fd = cqe->res;
+    const network::IPAddress addr(
+        work_item->m_buffer_for_uring, work_item->m_connect_sock_len);
+    const ConnectResult new_conn{ .m_new_fd = fd, .m_address = addr };
+
+    fprintf(stderr, "CONN- XQE - res = %d\n", fd);
+
+    work_item->call_connect_callback(new_conn);
+}
+
 
 void IOUring::call_accept_callback(
     std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
@@ -462,6 +487,7 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         re_submit(*work_item);
         break;
 
+
     case WorkItem::Type::RECV: {
         auto ret = call_recv_callback(work_item, cqe);
         switch (ret)
@@ -475,7 +501,12 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         break;
     }
 
-    case WorkItem::Type::SEND:
+    case WorkItem::Type::CONNECT:
+        call_connect_callback(work_item, cqe);
+        get_pool().free_work_item(id);
+        break;
+
+        case WorkItem::Type::SEND:
         call_send_callback(work_item, cqe);
         get_pool().free_work_item(id);
         break;
