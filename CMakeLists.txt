@@ -4,7 +4,11 @@ project(io_uring_interface_suite CXX)
 
 add_library(io_uring_interface_lib
     src/IOUring.cpp
+    src/IOUringInterface.cpp
     src/StringUtils.cpp
+    src/Logger.cpp
+    src/IPAddress.cpp
+    src/ShellUtils.cpp
 )
 
 target_link_libraries(io_uring_interface_lib -luring ${UUID_LIBRARIES})
