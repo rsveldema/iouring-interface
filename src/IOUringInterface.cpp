@@ -35,7 +35,7 @@ void IOUringInterface::tune()
 {
     if (! m_tune)
     {
-        LOG_INFO(get_logger(), "not tuning interface settings\n");
+        LOG_INFO(get_logger(), "not tuning interface settings");
         return;
     }
     shell::run_cmd("ethtool -C " + m_interface_name + " tx-usecs 1",
@@ -73,7 +73,7 @@ bool IOUringInterface::try_get_interface_ip()
             continue;
         }
 
-        LOG_INFO(get_logger(), "FOUND INTERFACE: %-8s %s (%d)\n", ifa->ifa_name,
+        LOG_INFO(get_logger(), "FOUND INTERFACE: %-8s %s (%d)", ifa->ifa_name,
             (family == AF_PACKET)    ? "AF_PACKET" :
                 (family == AF_INET)  ? "AF_INET" :
                 (family == AF_INET6) ? "AF_INET6" :

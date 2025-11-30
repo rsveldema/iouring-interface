@@ -29,9 +29,31 @@ namespace network
 
 enum class [[nodiscard]] ReceivePostAction{ NONE, RE_SUBMIT };
 
+struct AcceptResult
+{
+    int m_new_fd;
+    IPAddress m_address;
+};
+
+struct SendResult
+{
+    int status;
+};
+
+struct ConnectResult
+{
+    int status;
+    IPAddress m_address;
+};
+
+struct CloseResult
+{
+    int status;
+};
+
 using recv_callback_func_t =
     std::function<ReceivePostAction(const ReceivedMessage& msg)>;
-using send_callback_func_t = std::function<void()>;
+using send_callback_func_t = std::function<void(const SendResult&)>;
 using accept_callback_func_t =
     std::function<void(const AcceptResult& new_conn)>;
 using connect_callback_func_t =
@@ -148,11 +170,12 @@ public:
         return m_sa;
     }
 
-    void call_send_callback()
+    void call_send_callback(int status)
     {
         assert(std::holds_alternative<send_callback_func_t>(m_callback));
         auto call = std::get<send_callback_func_t>(m_callback);
-        call();
+        SendResult result { status };
+        call(result);
         m_send_packet.reset();
     }
 
@@ -263,4 +286,8 @@ private:
 
     friend class IOUring;
 };
+
+SocketType get_type(const AcceptResult& res);
+SocketPortID get_port(const AcceptResult& res);
+
 } // namespace network

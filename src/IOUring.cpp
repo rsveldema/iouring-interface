@@ -50,7 +50,7 @@ void IOUring::init_ring()
         {
             LOG_ERROR(get_logger(),
                 "queue_init failed: %s\n"
-                "NB: This requires a kernel version >= 6.0\n",
+                "NB: This requires a kernel version >= 6.0",
                 strerror(-ret));
             abort();
         }
@@ -61,7 +61,7 @@ void IOUring::init_ring()
             if (ret < 0)
             {
                 LOG_ERROR(
-                    get_logger(), "register_ring_fd: %s\n", strerror(-ret));
+                    get_logger(), "register_ring_fd: %s", strerror(-ret));
                 abort();
             }
 
@@ -148,7 +148,12 @@ void IOUring::probe_features()
     ProbeUringFeatures probe(&m_ring, get_logger());
     assert(probe.supports(UringFeature::IORING_OP_ACCEPT));
     //assert(probe.supports(UringFeature::IORING_OP_LISTEN));
-    assert(probe.supports(UringFeature::IORING_OP_READ));
+    assert(probe.supports(UringFeature::IORING_OP_RECV));
+    assert(probe.supports(UringFeature::IORING_OP_RECVMSG));
+    assert(probe.supports(UringFeature::IORING_OP_SEND));
+    assert(probe.supports(UringFeature::IORING_OP_SENDMSG));
+    assert(probe.supports(UringFeature::IORING_OP_CLOSE));
+    assert(probe.supports(UringFeature::IORING_OP_CONNECT));
 }
 
 
@@ -159,11 +164,9 @@ IOUring::~IOUring()
 
 void IOUring::submit_all_requests()
 {
-    fprintf(stderr, "SUBMIT REQUEST!\n");
-
+    // fprintf(stderr, "SUBMIT REQUEST!\n");
     // unsigned wait_nr = 1;
     // const auto ret = io_uring_submit_and_wait(&m_ring, wait_nr);
-
     const auto ret = io_uring_submit(&m_ring);
     if (ret < 0)
     {
@@ -213,6 +216,10 @@ void IOUring::re_submit(WorkItem& item)
     case WorkItem::Type::ACCEPT: {
         int flags = 0;
         // flags |= IOSQE_BUFFER_SELECT;
+
+        LOG_INFO(get_logger(), "accept on socket %d",
+            item.get_socket()->get_fd());
+
         item.m_accept_sock_len = 0;
         io_uring_prep_accept(sqe, item.get_socket()->get_fd(),
             (struct sockaddr*) &item.m_buffer_for_uring,
@@ -323,7 +330,7 @@ void IOUring::call_send_callback(
     LOG_DEBUG(get_logger(), "=======> SEND CALLBACK: %d\n", cqe->res);
     if (cqe->res < 0)
     {
-        LOG_ERROR(get_logger(), "recv cqe bad res %d\n", cqe->res);
+        LOG_ERROR(get_logger(), "recv cqe bad res %d", cqe->res);
         if (cqe->res == -EFAULT || cqe->res == -EINVAL)
         {
             LOG_ERROR(
@@ -332,16 +339,16 @@ void IOUring::call_send_callback(
         return;
     }
 
-    work_item->call_send_callback();
+    work_item->call_send_callback(cqe->res);
 }
 
 void IOUring::call_connect_callback(
     std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
 {
-    LOG_DEBUG(get_logger(), "=======> CONNECT CALLBACK: %d\n", cqe->res);
+    LOG_DEBUG(get_logger(), "=======> CONNECT CALLBACK: %d", cqe->res);
     if (cqe->res < 0)
     {
-        LOG_ERROR(get_logger(), "recv cqe bad res %d (%s)\n", cqe->res,
+        LOG_ERROR(get_logger(), "recv cqe bad res %d (%s)", cqe->res,
             strerror(-cqe->res));
         if (cqe->res == -EFAULT || cqe->res == -EINVAL)
         {
@@ -368,7 +375,8 @@ void IOUring::call_accept_callback(
     // if (!(cqe->flags & IORING_CQE_F_BUFFER) || cqe->res < 0)
     if (cqe->res < 0)
     {
-        LOG_ERROR(get_logger(), "recv cqe bad res %d\n", cqe->res);
+        LOG_ERROR(get_logger(), "recv cqe bad res %d (%s)", cqe->res,
+            strerror(-cqe->res));
         if (cqe->res == -EFAULT || cqe->res == -EINVAL)
         {
             LOG_ERROR(
@@ -498,7 +506,7 @@ ReceivePostAction IOUring::call_recv_callback(
 
         case -EINVAL: {
             LOG_ERROR(get_logger(),
-                "NB: This requires a kernel version >= 6.0 (EINVAL)\n");
+                "NB: This requires a kernel version >= 6.0 (EINVAL)");
             break;
         }
         }
@@ -638,6 +646,16 @@ Error IOUring::poll_completion_queues()
     }
     return Error::OK;
 }
+
+void IOUring::submit_accept(const std::shared_ptr<ISocket>& socket,
+        accept_callback_func_t handler)
+{
+    assert(socket->get_kind() == SocketKind::SERVER_STREAM_SOCKET);
+    assert(m_initialized);
+    get_pool().alloc_accept_work_item(
+        socket, shared_from_this(), handler, "accept-job");
+}
+
 
 void IOUring::submit_connect(const std::shared_ptr<ISocket>& socket,
     const IPAddress& target, connect_callback_func_t handler)

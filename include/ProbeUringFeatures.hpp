@@ -37,6 +37,8 @@ public:
             return UringFeature::IORING_OP_TIMEOUT_REMOVE;
         case IORING_OP_ACCEPT:
             return UringFeature::IORING_OP_ACCEPT;
+        case IORING_OP_LISTEN:
+            return UringFeature::IORING_OP_LISTEN;
         case IORING_OP_ASYNC_CANCEL:
             return UringFeature::IORING_OP_ASYNC_CANCEL;
         case IORING_OP_LINK_TIMEOUT:

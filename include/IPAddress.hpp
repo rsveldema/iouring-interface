@@ -132,6 +132,7 @@ public:
         abort();
     }
 
+    /** returns null if not ipv4 */
     const sockaddr_in* get_ipv4() const
     {
         if (m_in4)
@@ -142,7 +143,7 @@ public:
         return nullptr;
     }
 
-
+    /** returns null if not ipv6 */
     const sockaddr_in6* get_ipv6() const
     {
         if (m_in6)

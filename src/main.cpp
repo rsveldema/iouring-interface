@@ -40,8 +40,8 @@ void handle_new_connection(const std::shared_ptr<network::IOUringInterface>& io,
     pkt.append("Accept: application/json\r\n");
     pkt.append("\r\n");
 
-    wi->submit([io, socket]() {
-        printf("packet sent successfully!\n");
+    wi->submit([io, socket](const network::SendResult& result) {
+        printf("packet sent successfully: %d\n", result.status);
         handle_packet_sent(io, socket);
     });
 }
@@ -78,19 +78,46 @@ void do_http_ping(const network::IPAddress& ping_addr, Logger& logger,
 
 namespace server
 {
+bool should_quit = false;
+
+void handle_new_connection(const network::AcceptResult& res,
+    const std::shared_ptr<network::IOUringInterface>& io,
+    Logger& logger)
+{
+    auto socket = std::make_shared<network::SocketImpl>(logger, res);
+
+    io->submit_recv(socket, [](const network::ReceivedMessage& msg) {
+        fprintf(stderr, "received: %s\n", msg.to_string().c_str());
+        return network::ReceivePostAction::RE_SUBMIT;
+    });
+}
 
 void do_webserver(Logger& logger, const std::string& interface_name, bool tune)
 {
     auto port = network::SocketPortID::LOCAL_WEB_PORT;
 
-    LOG_INFO(logger, "going to do a dummy websever\n");
+    LOG_INFO(logger, "going to do a simple websever\n");
 
     auto socket =
         std::make_shared<network::SocketImpl>(network::SocketType::IPV4_TCP,
-            port, logger, network::SocketKind::CLIENT_SOCKET);
+            port, logger, network::SocketKind::SERVER_STREAM_SOCKET);
 
     auto io = std::make_shared<network::IOUring>(logger, interface_name, tune);
     io->init();
+
+    io->submit_accept(
+        socket, [io, socket, &logger](const network::AcceptResult& res) {
+            assert(res.m_new_fd != 0);
+
+            handle_new_connection(res, io, logger);
+        });
+
+    LOG_INFO(logger, "waiting for new requests");
+    while (!should_quit)
+    {
+        io->poll_completion_queues();
+    }
+    LOG_INFO(logger, "exiting...");
 }
 } // namespace server
 
@@ -115,7 +142,8 @@ int main(int argc, char** argv)
         {
             auto in_addr =
                 network::IPAddress::string_to_ipv4_address(argv[i + 1], logger);
-            network::IPAddress addr(in_addr, network::SocketPortID::ENCRYPTED_WEB_PORT);
+            network::IPAddress addr(
+                in_addr, network::SocketPortID::ENCRYPTED_WEB_PORT);
             ping_addr_opt = addr;
         }
         else if (arg == "--no-tune")

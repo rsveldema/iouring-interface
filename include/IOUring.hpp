@@ -30,11 +30,15 @@ public:
     void submit_connect(const std::shared_ptr<ISocket>& socket, const IPAddress& target,
         connect_callback_func_t handler) override;
 
+    void submit_accept(const std::shared_ptr<ISocket>& socket,
+        accept_callback_func_t handler) override;
+
     void submit_recv(const std::shared_ptr<ISocket>& socket,
         recv_callback_func_t handler) override;
 
     void submit_close(const std::shared_ptr<ISocket>& socket,
         close_callback_func_t handler) override;
+
 
     void submit_all_requests() override;
 

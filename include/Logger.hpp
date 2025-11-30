@@ -40,6 +40,8 @@ private:
     void log(uint32_t line, const char* file, Level level, const std::string& msg, va_list& ap);
 };
 
-#define LOG_DEBUG(logger, ...) if (logger.enable_debug()) { logger.debug_msg(__LINE__, __FILE__, __VA_ARGS__); }
-#define LOG_INFO(logger, ...)  if (logger.enable_info()) { logger.info_msg(__LINE__, __FILE__, __VA_ARGS__); }
-#define LOG_ERROR(logger, ...)  logger.error_msg(__LINE__, __FILE__, __VA_ARGS__)
+const char* strip_prefix(const char* path);
+
+#define LOG_DEBUG(logger, ...) if (logger.enable_debug()) { logger.debug_msg(__LINE__, strip_prefix(__FILE__), __VA_ARGS__); }
+#define LOG_INFO(logger, ...)  if (logger.enable_info()) { logger.info_msg(__LINE__, strip_prefix(__FILE__), __VA_ARGS__); }
+#define LOG_ERROR(logger, ...)  logger.error_msg(__LINE__, strip_prefix(__FILE__), __VA_ARGS__)

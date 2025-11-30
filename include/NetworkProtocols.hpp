@@ -17,6 +17,8 @@ enum class SocketKind
 
 enum class SocketType
 {
+    UNKNOWN,
+
     IPV4_UDP,
     IPV4_TCP,
 
@@ -26,6 +28,8 @@ enum class SocketType
 
 enum class SocketPortID : u_int16_t
 {
+    UNKNOWN = 0xffff,
+
     UNENCRYPTED_WEB_PORT = 80,
     ENCRYPTED_WEB_PORT = 443,
 

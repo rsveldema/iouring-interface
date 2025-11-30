@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
+#include <cstring>
 
 static int count_loggers = 0;
 
@@ -95,7 +96,7 @@ void Logger::log(uint32_t line, const char* file, Level level,
 
     std::time_t time = std::time({});
     char timeString[128];
-    std::strftime(std::data(timeString), std::size(timeString), "%FT%TZ",
+    std::strftime(std::data(timeString), std::size(timeString), "%T",
         std::gmtime(&time));
 
     char str[1024];
@@ -107,4 +108,20 @@ void Logger::log(uint32_t line, const char* file, Level level,
     {
         fflush(m_f);
     }
+}
+
+
+const char* strip_prefix(const char* path)
+{
+    if (const char *src = strstr(path, "src/"))
+    {
+        return src;
+    }
+
+    if (const char *src = strstr(path, "include/"))
+    {
+        return src;
+    }
+
+    return path;
 }

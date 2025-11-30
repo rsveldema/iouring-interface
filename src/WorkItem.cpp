@@ -76,4 +76,31 @@ void WorkItem::submit(const close_callback_func_t& cb)
     m_network->submit_all_requests();
 }
 
+SocketType get_type(const AcceptResult& res)
+{
+    if (res.m_address.get_ipv4())
+    {
+        return SocketType::IPV4_TCP;
+    }
+    if (res.m_address.get_ipv6())
+    {
+        return SocketType::IPV6_TCP;
+    }
+
+    return SocketType::UNKNOWN;
+}
+
+SocketPortID get_port(const AcceptResult& res)
+{
+    if (auto addr = res.m_address.get_ipv4())
+    {
+        return static_cast<SocketPortID>(addr->sin_port);
+    }
+    if (auto addr = res.m_address.get_ipv6())
+    {
+        return static_cast<SocketPortID>(addr->sin6_port);
+    }
+    return SocketPortID::UNKNOWN;
+}
+
 } // namespace network
