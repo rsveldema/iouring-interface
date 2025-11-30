@@ -172,7 +172,9 @@ void IOUring::probe_features()
 {
     ProbeUringFeatures probe(&m_ring, get_logger());
     assert(probe.supports(UringFeature::IORING_OP_ACCEPT));
-    // assert(probe.supports(UringFeature::IORING_OP_LISTEN));
+#if SUPPORT_LISTEN_IN_LIBURING
+    assert(probe.supports(UringFeature::IORING_OP_LISTEN));
+#endif
     assert(probe.supports(UringFeature::IORING_OP_RECV));
     assert(probe.supports(UringFeature::IORING_OP_RECVMSG));
     assert(probe.supports(UringFeature::IORING_OP_SEND));

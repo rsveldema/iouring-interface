@@ -47,6 +47,8 @@ enum class UringFeature
     IORING_OP_MKDIRAT,
     IORING_OP_SYMLINKAT,
     IORING_OP_LINKAT,
+#if SUPPORT_LISTEN_IN_LIBURING
     IORING_OP_LISTEN,
+#endif
 };
 } // namespace network
