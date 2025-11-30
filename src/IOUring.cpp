@@ -9,7 +9,8 @@
 
 namespace network
 {
-IOUring::IOUring(Logger& logger, const std::string& interface_name, bool tune, size_t queue_size)
+IOUring::IOUring(Logger& logger, const std::string& interface_name, bool tune,
+    size_t queue_size)
     : IOUringInterface(logger, interface_name, tune)
     , m_queue_size(queue_size)
 {
@@ -19,13 +20,30 @@ Error IOUring::init()
 {
     IOUringInterface::init();
 
-    if (true)
+    init_ring();
+
+    probe_features();
+
+    auto ret = setup_buffer_pool();
+    m_initialized = true;
+    return ret;
+}
+
+void IOUring::init_ring()
+{
+    if (false)
     {
         struct io_uring_params params;
         memset(&params, 0, sizeof(params));
         params.cq_entries = QD * 8;
-        params.flags = IORING_SETUP_SUBMIT_ALL | IORING_SETUP_COOP_TASKRUN |
-            IORING_SETUP_CQSIZE;
+        params.flags =
+            // IORING_SETUP_IOPOLL | // only for storage
+            IORING_SETUP_SUBMIT_ALL | //
+            IORING_SETUP_COOP_TASKRUN |  //
+            IORING_SETUP_SINGLE_ISSUER | //
+            IORING_SETUP_DEFER_TASKRUN | //
+            IORING_SETUP_CQSIZE | //
+             0;
 
         if (const auto ret = io_uring_queue_init_params(QD, &m_ring, &params);
             ret < 0)
@@ -36,23 +54,38 @@ Error IOUring::init()
                 strerror(-ret));
             abort();
         }
+
+        if (1)
+        {
+            auto ret = io_uring_register_ring_fd(&m_ring);
+            if (ret < 0)
+            {
+                LOG_ERROR(
+                    get_logger(), "register_ring_fd: %s\n", strerror(-ret));
+                abort();
+            }
+
+            ret = io_uring_close_ring_fd(&m_ring);
+            if (ret < 0)
+            {
+                LOG_ERROR(get_logger(), "close_ring_fd: %s\n", strerror(-ret));
+                abort();
+            }
+        }
     }
     else
     {
-        if (const auto status = io_uring_queue_init(m_queue_size, &m_ring, 0);
-            status != 0)
+        if (const auto ret = io_uring_queue_init(m_queue_size, &m_ring, 0);
+            ret != 0)
         {
-            return errno_to_error(-status);
+            LOG_ERROR(
+                get_logger(), "io_uring_queue_init: %s\n", strerror(-ret));
+            abort();
         }
     }
 
-    probe_features();
-
-    auto ret = setup_buffer_pool();
-    m_initialized = true;
-    return ret;
+    io_uring_ring_dontfork(&m_ring);
 }
-
 
 Error IOUring::setup_buffer_pool()
 {
@@ -68,16 +101,16 @@ Error IOUring::setup_buffer_pool()
 
     io_uring_buf_ring_init(buf_ring);
 
-    io_uring_buf_reg reg;
-    memset(&reg, 0, sizeof(reg));
-    reg.ring_addr = (unsigned long) buf_ring;
-    reg.ring_entries = BUFFERS;
-    reg.bgid = 0;
+    memset(&m_reg, 0, sizeof(m_reg));
+    m_reg.ring_addr = (unsigned long) buf_ring;
+    m_reg.ring_entries = BUFFERS;
+    m_reg.bgid = 0;
+    m_reg.flags = 0;
 
     buffer_base =
         (unsigned char*) buf_ring + sizeof(struct io_uring_buf) * BUFFERS;
 
-    const auto ret = io_uring_register_buf_ring(&m_ring, &reg, 0);
+    const auto ret = io_uring_register_buf_ring(&m_ring, &m_reg, 0);
     if (ret)
     {
         LOG_ERROR(get_logger(),
@@ -112,7 +145,10 @@ void IOUring::recycle_buffer(int idx)
 
 void IOUring::probe_features()
 {
-    ProbeUringFeatures probe(&m_ring, m_features, get_logger());
+    ProbeUringFeatures probe(&m_ring, get_logger());
+    assert(probe.supports(UringFeature::IORING_OP_ACCEPT));
+    //assert(probe.supports(UringFeature::IORING_OP_LISTEN));
+    assert(probe.supports(UringFeature::IORING_OP_READ));
 }
 
 
@@ -124,12 +160,17 @@ IOUring::~IOUring()
 void IOUring::submit_all_requests()
 {
     fprintf(stderr, "SUBMIT REQUEST!\n");
+
+    // unsigned wait_nr = 1;
+    // const auto ret = io_uring_submit_and_wait(&m_ring, wait_nr);
+
     const auto ret = io_uring_submit(&m_ring);
     if (ret < 0)
     {
-        fprintf(stderr, "failed to submit sqe: %s\n",
-            strerror(-ret));
-    } else {
+        fprintf(stderr, "failed to submit sqe: %s\n", strerror(-ret));
+    }
+    else
+    {
         fprintf(stderr, "%d jobs submitted\n", ret);
     }
 }
@@ -162,10 +203,16 @@ void IOUring::re_submit(WorkItem& item)
     switch (item.get_type())
     {
     default:
+        LOG_ERROR(get_logger(), "INTERNAL ERROR: unhandled work item type\n");
         abort();
+
+    case WorkItem::Type::CLOSE:
+        io_uring_prep_close(sqe, item.get_socket()->get_fd());
+        break;
 
     case WorkItem::Type::ACCEPT: {
         int flags = 0;
+        // flags |= IOSQE_BUFFER_SELECT;
         item.m_accept_sock_len = 0;
         io_uring_prep_accept(sqe, item.get_socket()->get_fd(),
             (struct sockaddr*) &item.m_buffer_for_uring,
@@ -176,19 +223,32 @@ void IOUring::re_submit(WorkItem& item)
     case WorkItem::Type::CONNECT: {
         assert(item.m_connect_sock_len > 0);
         const auto fd = item.get_socket()->get_fd();
+
+        sockaddr_in* sa = (sockaddr_in*) &item.m_buffer_for_uring;
+
+        assert(item.m_connect_sock_len == sizeof(*sa));
+
+        fprintf(
+            stderr, "prep-connect: %d (port %d)\n", fd, htons(sa->sin_port));
+
         io_uring_prep_connect(sqe, fd,
             (struct sockaddr*) &item.m_buffer_for_uring,
             item.m_connect_sock_len);
+        if (item.next_request_should_wait_for_this_request())
+        {
+            sqe->flags |= IOSQE_IO_LINK;
+        }
         break;
     }
 
     case WorkItem::Type::RECV: {
         if (item.is_stream())
         {
+            int flags = 0;
             fprintf(stderr, " register rcv: %d\n", item.get_socket()->get_fd());
             io_uring_prep_recv(sqe, item.get_socket()->get_fd(),
                 nullptr, // buffer selected automatically from buffer queue
-                buffer_size(), 0);
+                buffer_size(), flags);
         }
         else
         {
@@ -226,6 +286,7 @@ void IOUring::re_submit(WorkItem& item)
             int flags = 0;
             const auto& sp = item.get_raw_send_packet();
 
+            LOG_INFO(get_logger(), "sending %ld bytes (%s)\n", sp.size(), sp.data());
             io_uring_prep_send(sqe, fd, sp.data(), sp.size(), flags);
         }
         else
@@ -237,10 +298,22 @@ void IOUring::re_submit(WorkItem& item)
             // sqe->flags |= IOSQE_FIXED_FILE;
             // sqe->flags |= IOSQE_BUFFER_SELECT;
         }
+
+        if (item.next_request_should_wait_for_this_request())
+        {
+            sqe->flags |= IOSQE_IO_LINK;
+        }
         break;
     }
     }
+}
 
+void IOUring::call_close_callback(
+        std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
+{
+    const int status = cqe->res;
+    LOG_DEBUG(get_logger(), "=======> CLOSE CALLBACK: %d\n", cqe->res);
+    work_item->call_close_callback(status);
 }
 
 
@@ -268,7 +341,8 @@ void IOUring::call_connect_callback(
     LOG_DEBUG(get_logger(), "=======> CONNECT CALLBACK: %d\n", cqe->res);
     if (cqe->res < 0)
     {
-        LOG_ERROR(get_logger(), "recv cqe bad res %d\n", cqe->res);
+        LOG_ERROR(get_logger(), "recv cqe bad res %d (%s)\n", cqe->res,
+            strerror(-cqe->res));
         if (cqe->res == -EFAULT || cqe->res == -EINVAL)
         {
             LOG_ERROR(
@@ -277,12 +351,12 @@ void IOUring::call_connect_callback(
         return;
     }
 
-    const int fd = cqe->res;
+    const int status = cqe->res;
     const network::IPAddress addr(
         work_item->m_buffer_for_uring, work_item->m_connect_sock_len);
-    const ConnectResult new_conn{ .m_new_fd = fd, .m_address = addr };
+    const ConnectResult new_conn{ .status = status, .m_address = addr };
 
-    fprintf(stderr, "CONN- XQE - res = %d\n", fd);
+    fprintf(stderr, "CONN- XQE - res = %d\n", status);
 
     work_item->call_connect_callback(new_conn);
 }
@@ -412,7 +486,8 @@ ReceivePostAction IOUring::call_recv_callback(
 {
     if (cqe->res < 0)
     {
-        LOG_ERROR(get_logger(), "recv cqe bad res %d", cqe->res);
+        LOG_ERROR(get_logger(), "recv cqe bad res %d (%s)", cqe->res,
+            strerror(-cqe->res));
         switch (cqe->res)
         {
         case -EFAULT: {
@@ -487,6 +562,9 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         re_submit(*work_item);
         break;
 
+    case WorkItem::Type::CLOSE:
+        call_close_callback(work_item, cqe);
+        break;
 
     case WorkItem::Type::RECV: {
         auto ret = call_recv_callback(work_item, cqe);
@@ -506,7 +584,7 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         get_pool().free_work_item(id);
         break;
 
-        case WorkItem::Type::SEND:
+    case WorkItem::Type::SEND:
         call_send_callback(work_item, cqe);
         get_pool().free_work_item(id);
         break;
@@ -525,12 +603,15 @@ void IOUring::send_packet(const std::shared_ptr<WorkItem>& work_item)
 
 Error IOUring::poll_completion_queues()
 {
-    // fprintf(stderr, "waiting for incoming msgs\n");
-    const auto ret = io_uring_submit(&m_ring);
-    if (ret < 0)
+    if (false)
     {
-        perror("failed to io-submit");
-        return Error::UNKNOWN;
+        // fprintf(stderr, "waiting for incoming msgs\n");
+        const auto ret = io_uring_submit(&m_ring);
+        if (ret < 0)
+        {
+            perror("failed to io-submit");
+            return Error::UNKNOWN;
+        }
     }
 
     // no loop around this to get more bandwidth.
@@ -541,6 +622,8 @@ Error IOUring::poll_completion_queues()
     switch (success)
     {
     case 0:
+        fprintf(stderr, "peek successful!\n");
+
         call_callback_and_free_work_item_id(cqe);
         io_uring_cq_advance(&m_ring, 1);
         break;
@@ -556,16 +639,37 @@ Error IOUring::poll_completion_queues()
     return Error::OK;
 }
 
-void IOUring::submit_connect(
-    const std::shared_ptr<ISocket>& socket, const IPAddress& target)
+void IOUring::submit_connect(const std::shared_ptr<ISocket>& socket,
+    const IPAddress& target, connect_callback_func_t handler)
 {
     assert(m_initialized);
-    auto wi = get_pool().alloc_connect_work_item(
-        target, socket, shared_from_this(),
-        [this](const ConnectResult& result) {
-            LOG_INFO(get_logger(), "connected: %d\n", result.m_new_fd);
-        },
-        "connect-job");
+    get_pool().alloc_connect_work_item(
+        target, socket, shared_from_this(), handler, "connect-job");
 }
+
+void IOUring::submit_recv(
+    const std::shared_ptr<ISocket>& socket, recv_callback_func_t handler)
+{
+    assert(m_initialized);
+    get_pool().alloc_recv_work_item(
+        socket, shared_from_this(), handler, "read-from-socket");
+}
+
+std::shared_ptr<WorkItem> IOUring::submit_send(const std::shared_ptr<ISocket>& socket)
+{
+    assert(m_initialized);
+    auto item = get_pool().alloc_send_work_item(
+        socket, shared_from_this(), "write-from-socket");
+    return item;
+}
+
+void IOUring::submit_close(const std::shared_ptr<ISocket>& socket,
+        close_callback_func_t handler)
+{
+    assert(m_initialized);
+    get_pool().alloc_close_work_item(
+        socket, shared_from_this(), handler, "close-of-socket");
+}
+
 
 } // namespace network

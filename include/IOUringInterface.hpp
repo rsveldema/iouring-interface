@@ -22,7 +22,24 @@ public:
     virtual Error init();
     virtual Error poll_completion_queues() = 0;
     virtual void re_submit(WorkItem& item) = 0;
-    virtual void submit_connect(const std::shared_ptr<ISocket>& socket, const IPAddress& target) = 0;
+
+    virtual void submit_connect(const std::shared_ptr<ISocket>& socket, const IPAddress& target,
+        connect_callback_func_t handler) = 0;
+
+    virtual void submit_recv(const std::shared_ptr<ISocket>& socket,
+        recv_callback_func_t handler) = 0;
+
+    /** The steps for sending a packet:
+     *      - This returns a work-item where you can retrieve the SendPacket object from
+     *      - Then with that send packet you append your dara
+     *      - Then you call submit on the work-item.
+     *      - The WorkItem::submit() method then has the callback arg.
+    */
+    virtual std::shared_ptr<WorkItem> submit_send(const std::shared_ptr<ISocket>& socket) = 0;
+
+    virtual void submit_close(const std::shared_ptr<ISocket>& socket,
+        close_callback_func_t handler) = 0;
+
     virtual void submit_all_requests() = 0;
 
 
@@ -56,7 +73,6 @@ private:
     std::optional<std::string> mac_opt;
 
 protected:
-    std::map<UringFeature, bool> m_features;
     bool m_initialized = false;
 
     void tune();

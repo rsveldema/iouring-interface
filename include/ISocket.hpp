@@ -18,37 +18,6 @@
 
 namespace network
 {
-enum class SocketKind
-{
-    MULTICAST_PACKET_SOCKET,
-    SERVER_STREAM_SOCKET,
-    CLIENT_SOCKET
-};
-
-enum class SocketType
-{
-    IPV4_UDP,
-    IPV4_TCP,
-
-    IPV6_UDP,
-    IPV6_TCP
-};
-
-enum class SocketPortID : u_int16_t
-{
-    WEB_PORT = 8080,
-    PTP_PORT_EVENT = 319,
-    PTP_PORT_GENERAL = 320,
-
-    // Session Announcement Protocol
-    SAP_PORT_EVENT = 9875,
-
-    // rtp audio bcast
-    RTP_AUDIO_PORT = 5004,
-
-    MDNS_PORT=5353
-};
-
 
 struct AcceptResult
 {
@@ -58,8 +27,13 @@ struct AcceptResult
 
 struct ConnectResult
 {
-    int m_new_fd;
+    int status;
     IPAddress m_address;
+};
+
+struct CloseResult
+{
+    int status;
 };
 
 

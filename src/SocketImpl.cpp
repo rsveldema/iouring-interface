@@ -11,28 +11,36 @@
 
 namespace network
 {
+#include <fcntl.h>
+
 SocketImpl::SocketImpl(
     SocketType type, SocketPortID port, Logger& logger, SocketKind kind)
     : ISocket(type, port, logger)
 {
     memset(&m_mreq, 0, sizeof(m_mreq));
+    int non_blocking_option = 0;
+    if (false)
+    {
+        non_blocking_option |= SOCK_NONBLOCK;
+    }
+
     switch (type)
     {
     case SocketType::IPV4_UDP:
-        m_fd = socket(AF_INET, SOCK_DGRAM, 0);
+        m_fd = socket(AF_INET, SOCK_DGRAM | non_blocking_option, 0);
         LOG_DEBUG(logger, "socket-v4 %d with dgram type!", m_fd);
         break;
     case SocketType::IPV4_TCP:
-        m_fd = socket(AF_INET, SOCK_STREAM, 0);
+        m_fd = socket(AF_INET, SOCK_STREAM | non_blocking_option, 0);
         LOG_DEBUG(logger, "socket-v4 %d with stream type!", m_fd);
         break;
     case SocketType::IPV6_UDP:
-        m_fd = socket(AF_INET6, SOCK_DGRAM, 0);
+        m_fd = socket(AF_INET6, SOCK_DGRAM | non_blocking_option, 0);
         LOG_DEBUG(logger, "socket-v6 %d with dgram type!", m_fd);
         abort();
         break;
     case SocketType::IPV6_TCP:
-        m_fd = socket(AF_INET6, SOCK_STREAM, 0);
+        m_fd = socket(AF_INET6, SOCK_STREAM | non_blocking_option, 0);
         LOG_DEBUG(logger, "socket-v6 %d with stream type!", m_fd);
         break;
     }
@@ -45,10 +53,11 @@ SocketImpl::SocketImpl(
         sizeof(set_option_on));
     assert(res == 0);
 
-
     switch (kind)
     {
     case SocketKind::CLIENT_SOCKET: {
+        local_bind(static_cast<SocketPortID>(9090));
+
         int val = 1;
         int ret = setsockopt(m_fd, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val));
         if (ret == -1)

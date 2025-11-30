@@ -47,7 +47,7 @@ public:
     std::shared_ptr<WorkItem> alloc_send_work_item(
         const std::shared_ptr<ISocket>& socket,
         const std::shared_ptr<IOUringInterface>& network,
-        const send_callback_func_t& callback, const char* descr);
+        const char* descr);
 
     std::shared_ptr<WorkItem> alloc_recv_work_item(
         const std::shared_ptr<ISocket>& socket,
@@ -64,6 +64,12 @@ public:
         const std::shared_ptr<ISocket>& socket,
         const std::shared_ptr<IOUringInterface>& network,
         const connect_callback_func_t& callback, const char* descr);
+
+    std::shared_ptr<WorkItem> alloc_close_work_item(
+        const std::shared_ptr<ISocket>& socket,
+        const std::shared_ptr<network::IOUringInterface>& network,
+        const close_callback_func_t& callback, const char* descr);
+
 
     std::shared_ptr<WorkItem> get_work_item(work_item_id_t id);
     void free_work_item(work_item_id_t id);

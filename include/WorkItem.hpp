@@ -19,25 +19,24 @@
 #include <sys/types.h>
 
 #include <ISocket.hpp>
+#include <NetworkProtocols.hpp>
 #include <ReceivedMessage.hpp>
 #include <SendPacket.hpp>
 #include <UringDefs.hpp>
-#include <NetworkProtocols.hpp>
 
 namespace network
 {
 
-enum class  [[nodiscard]] ReceivePostAction {
-    NONE,
-    RE_SUBMIT
-};
+enum class [[nodiscard]] ReceivePostAction{ NONE, RE_SUBMIT };
 
-using recv_callback_func_t = std::function<ReceivePostAction(const ReceivedMessage& msg)>;
+using recv_callback_func_t =
+    std::function<ReceivePostAction(const ReceivedMessage& msg)>;
 using send_callback_func_t = std::function<void()>;
 using accept_callback_func_t =
     std::function<void(const AcceptResult& new_conn)>;
 using connect_callback_func_t =
-    std::function<void(const ConnectResult& new_conn)>;
+    std::function<void(const ConnectResult& result)>;
+using close_callback_func_t = std::function<void(const CloseResult& result)>;
 
 using work_item_id_t = uint64_t;
 
@@ -53,12 +52,13 @@ public:
         ACCEPT,
         SEND,
         RECV,
-        CONNECT
+        CONNECT,
+        CLOSE
     };
 
 
-    WorkItem(const std::shared_ptr<IOUringInterface>& network, work_item_id_t id,
-         const char* descr, const std::shared_ptr<ISocket>& s)
+    WorkItem(const std::shared_ptr<IOUringInterface>& network,
+        work_item_id_t id, const char* descr, const std::shared_ptr<ISocket>& s)
         : m_work_type(Type::UNKNOWN)
         , m_network(network)
         , m_id(id)
@@ -90,23 +90,7 @@ public:
         return m_work_type;
     }
 
-    static const char* type_to_string(Type t)
-    {
-        switch (t)
-        {
-        case Type::ACCEPT:
-            return "accept";
-        case Type::CONNECT:
-            return "connect";
-        case Type::RECV:
-            return "recv";
-        case Type::SEND:
-            return "send";
-        case Type::UNKNOWN:
-            return "unknown";
-        }
-        return "<unknown type of work item>";
-    }
+    static const char* type_to_string(Type t);
 
     const char* get_type_str() const
     {
@@ -118,10 +102,16 @@ public:
         return m_socket->is_stream();
     }
 
-    void submit(const recv_callback_func_t& cb);
-    void submit(const send_callback_func_t& cb);
-    void submit(const accept_callback_func_t& cb);
+    /** submit a connect request */
     void submit(const IPAddress& target, const connect_callback_func_t& cb);
+    /** submit a send request */
+    void submit(const send_callback_func_t& cb);
+    /** submit a recv request */
+    void submit(const recv_callback_func_t& cb);
+    /** submit a accept request */
+    void submit(const accept_callback_func_t& cb);
+    /** submit a close request */
+    void submit(const close_callback_func_t& cb);
 
     void clean_send_packet()
     {
@@ -166,7 +156,17 @@ public:
         m_send_packet.reset();
     }
 
-    [[nodiscard]] ReceivePostAction call_recv_callback(const ReceivedMessage& payload) const
+    void call_close_callback(int status)
+    {
+        assert(std::holds_alternative<close_callback_func_t>(m_callback));
+        auto call = std::get<close_callback_func_t>(m_callback);
+
+        CloseResult result { status };
+        call(result);
+    }
+
+    [[nodiscard]] ReceivePostAction call_recv_callback(
+        const ReceivedMessage& payload) const
     {
         assert(std::holds_alternative<recv_callback_func_t>(m_callback));
         auto call = std::get<recv_callback_func_t>(m_callback);
@@ -198,6 +198,7 @@ public:
         m_send_packet.reset();
         return m_send_packet;
     }
+
     const SendPacket& get_raw_send_packet() const
     {
         return m_send_packet;
@@ -211,6 +212,11 @@ public:
     const std::string& get_descr() const
     {
         return m_descr;
+    }
+
+    bool next_request_should_wait_for_this_request() const
+    {
+        return m_link_to_next_request;
     }
 
 
@@ -228,7 +234,9 @@ private:
     std::shared_ptr<IOUringInterface> m_network;
     work_item_id_t m_id;
 
-    std::variant<connect_callback_func_t, accept_callback_func_t, recv_callback_func_t, send_callback_func_t> m_callback;
+    std::variant<connect_callback_func_t, accept_callback_func_t,
+        recv_callback_func_t, send_callback_func_t, close_callback_func_t>
+        m_callback;
 
     // used/set when creating submit entry:
     std::array<char, 1024> m_control;
@@ -241,6 +249,9 @@ private:
     socklen_t m_accept_sock_len = 0;
     socklen_t m_connect_sock_len = 0;
     std::string m_descr;
+
+    // if the next request should wait for this one to finish
+    bool m_link_to_next_request = false;
 
     const IPAddress& get_socket_address() const
     {

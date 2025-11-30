@@ -94,39 +94,44 @@ public:
     }
 
     ProbeUringFeatures(
-        io_uring* ring, std::map<UringFeature, bool>& features, Logger& logger)
+        io_uring* ring, Logger& logger)
         : m_logger(logger)
     {
         m_probe = io_uring_get_probe_ring(ring);
-        if (m_probe)
-        {
-            for (size_t i = 0; i < m_probe->ops_len; i++)
-            {
-                const auto op = m_probe->ops[i].op;
-                const auto flags = m_probe->ops[i].flags;
-
-                if (!(flags & IO_URING_OP_SUPPORTED))
-                {
-                    continue;
-                }
-
-                // fprintf(stderr, "supported: op: %d\n", op);
-                const auto ec = convert_uring_op_to_feature(op);
-                features[ec] = true;
-            }
-        }
-        else
+        if (! m_probe)
         {
             LOG_ERROR(m_logger, "failed to probe uring features\n");
             abort();
         }
+
+        for (size_t i = 0; i < m_probe->ops_len; i++)
+        {
+            const auto op = m_probe->ops[i].op;
+            const auto flags = m_probe->ops[i].flags;
+
+            if (!(flags & IO_URING_OP_SUPPORTED))
+            {
+                continue;
+            }
+
+            // fprintf(stderr, "supported: op: %d\n", op);
+            const auto ec = convert_uring_op_to_feature(op);
+            m_features[ec] = true;
+        }
     }
+
+    bool supports(UringFeature f) const
+    {
+        return m_features.contains(f);
+    }
+
     ~ProbeUringFeatures()
     {
         io_uring_free_probe(m_probe);
     }
 
 private:
+    std::map<UringFeature, bool> m_features;
     Logger& m_logger;
     io_uring_probe* m_probe;
 };

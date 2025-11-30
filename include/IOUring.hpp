@@ -25,7 +25,17 @@ public:
     Error init() override;
     Error poll_completion_queues() override;
 
-    void submit_connect(const std::shared_ptr<ISocket>& socket, const IPAddress& target) override;
+    std::shared_ptr<WorkItem> submit_send(const std::shared_ptr<ISocket>& socket) override;
+
+    void submit_connect(const std::shared_ptr<ISocket>& socket, const IPAddress& target,
+        connect_callback_func_t handler) override;
+
+    void submit_recv(const std::shared_ptr<ISocket>& socket,
+        recv_callback_func_t handler) override;
+
+    void submit_close(const std::shared_ptr<ISocket>& socket,
+        close_callback_func_t handler) override;
+
     void submit_all_requests() override;
 
 private:
@@ -34,7 +44,8 @@ private:
     static constexpr auto CQES = (QD * 16);
     static constexpr auto BUFFERS = CQES;
 
-    size_t m_queue_size;
+    size_t m_queue_size = 0;
+    io_uring_buf_reg m_reg;
 
     io_uring m_ring{};
     io_uring_buf_ring* buf_ring = nullptr;
@@ -46,6 +57,8 @@ private:
 
     Error setup_buffer_pool();
     void probe_features();
+    void init_ring();
+
 
     size_t buffer_size() const
     {
@@ -70,6 +83,9 @@ private:
     io_uring_sqe* get_sqe();
 
     void call_send_callback(
+        std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe);
+
+    void call_close_callback(
         std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe);
 
     void call_connect_callback(

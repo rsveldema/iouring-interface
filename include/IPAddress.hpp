@@ -14,7 +14,7 @@
 
 #include <Logger.hpp>
 #include <StringUtils.hpp>
-
+#include <NetworkProtocols.hpp>
 
 namespace network
 {
@@ -23,25 +23,25 @@ class IPAddress
 public:
     IPAddress() = default;
 
-    explicit IPAddress(const in_addr& sa, in_port_t port)
+    explicit IPAddress(const in_addr& sa, SocketPortID port)
     {
         sockaddr_in sa_in;
         memset(&sa_in, 0, sizeof(sa));
 
         sa_in.sin_family = AF_INET;
-        sa_in.sin_port = port;
+        sa_in.sin_port = htons( static_cast<uint16_t>(port));
         sa_in.sin_addr = sa;
 
         m_in4 = sa_in;
     }
 
-    explicit IPAddress(const in6_addr& sa, in_port_t port)
+    explicit IPAddress(const in6_addr& sa, SocketPortID port)
     {
         sockaddr_in6 sa_in;
         memset(&sa_in, 0, sizeof(sa));
 
         sa_in.sin6_family = AF_INET6;
-        sa_in.sin6_port = port;
+        sa_in.sin6_port = htons(static_cast<uint16_t>(port));
         sa_in.sin6_addr = sa;
 
         m_in6 = sa_in;
@@ -68,17 +68,17 @@ public:
         assert((len == sizeof(sockaddr_in)) || (len == sizeof(sockaddr_in6)));
     }
 
-    void set_port(in_port_t port)
+    void set_port(SocketPortID port)
     {
         if (auto* a = get_mut_ipv4())
         {
-            a->sin_port = htons(port);
+            a->sin_port = htons(static_cast<uint16_t>(port));
             return;
         }
 
         if (auto* a = get_mut_ipv6())
         {
-            a->sin6_port = htons(port);
+            a->sin6_port = htons(static_cast<uint16_t>(port));
             return;
         }
         abort();

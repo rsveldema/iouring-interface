@@ -41,7 +41,7 @@ public:
 
     void append(const char* data)
     {
-        append((const uint8_t*) &data, strlen(data));
+        append((const uint8_t*) data, strlen(data));
     }
 
     void append(const uint8_t* data, size_t len)

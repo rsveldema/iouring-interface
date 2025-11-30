@@ -66,16 +66,14 @@ std::shared_ptr<WorkItem> WorkPool::internal_alloc_work_item(
     }
 }
 
-
 std::shared_ptr<WorkItem> WorkPool::alloc_send_work_item(
     const std::shared_ptr<ISocket>& socket,
     const std::shared_ptr<network::IOUringInterface>& network,
-    const send_callback_func_t& callback, const char* descr)
+    const char* descr)
 {
     std::lock_guard lock(m_mutex);
     auto wi = internal_alloc_work_item(socket, network, descr);
     assert(wi);
-    wi->submit(callback);
     return wi;
 }
 
@@ -113,6 +111,19 @@ std::shared_ptr<WorkItem> WorkPool::alloc_connect_work_item(
     auto wi = internal_alloc_work_item(socket, network, descr);
     assert(wi);
     wi->submit(target, callback);
+    return wi;
+}
+
+
+std::shared_ptr<WorkItem> WorkPool::alloc_close_work_item(
+    const std::shared_ptr<ISocket>& socket,
+    const std::shared_ptr<network::IOUringInterface>& network,
+    const close_callback_func_t& callback, const char* descr)
+{
+    std::lock_guard lock(m_mutex);
+    auto wi = internal_alloc_work_item(socket, network, descr);
+    assert(wi);
+    wi->submit(callback);
     return wi;
 }
 
