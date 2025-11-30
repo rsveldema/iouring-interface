@@ -45,7 +45,7 @@ std::shared_ptr<WorkItem> WorkPool::internal_alloc_work_item(
     if (m_free_ids.empty())
     {
         const auto id = m_work_items.size();
-        LOG_INFO(network->get_logger(), "  NEW: id = %ld (%s)", id, descr);
+        LOG_INFO(get_logger(), "  NEW: id = %ld (%s)", id, descr);
 
         auto ret = std::make_shared<WorkItem>(network, id, descr, socket);
         assert(!ret->is_free());
@@ -56,7 +56,7 @@ std::shared_ptr<WorkItem> WorkPool::internal_alloc_work_item(
     {
         work_item_id_t id = m_free_ids.top();
         m_free_ids.pop();
-        LOG_DEBUG(network->get_logger(),
+        LOG_DEBUG(get_logger(),
             "allocating work item from prepped-queue: %ld (%s)", id, descr);
 
         auto ret = std::make_shared<WorkItem>(network, id, descr, socket);

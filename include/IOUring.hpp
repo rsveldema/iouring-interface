@@ -40,8 +40,6 @@ public:
         close_callback_func_t handler) override;
 
 
-    void submit_all_requests() override;
-
 private:
     static constexpr auto QD = 64;
     static constexpr auto BUF_SHIFT = 12; /* 4k */
@@ -63,6 +61,7 @@ private:
     void probe_features();
     void init_ring();
 
+    void submit_all_requests();
 
     size_t buffer_size() const
     {
@@ -78,7 +77,7 @@ private:
 
     void recycle_buffer(int idx);
 
-    void re_submit(WorkItem& item) override;
+    void submit(WorkItem& item) override;
 
     void send_packet(const std::shared_ptr<WorkItem>& work_item);
 

@@ -24,31 +24,28 @@ const char* WorkItem::type_to_string(Type t)
 
 Logger& WorkItem::get_logger()
 {
-    return m_network->get_logger();
+    return m_io_ring->get_logger();
 }
 
 void WorkItem::submit(const recv_callback_func_t& cb)
 {
     m_callback = cb;
     m_work_type = Type::RECV;
-    m_network->re_submit(*this);
-    m_network->submit_all_requests();
+    m_io_ring->submit(*this);
 }
 
 void WorkItem::submit(const send_callback_func_t& cb)
 {
     m_callback = cb;
     m_work_type = Type::SEND;
-    m_network->re_submit(*this);
-    m_network->submit_all_requests();
+    m_io_ring->submit(*this);
 }
 
 void WorkItem::submit(const accept_callback_func_t& cb)
 {
     m_callback = cb;
     m_work_type = Type::ACCEPT;
-    m_network->re_submit(*this);
-    m_network->submit_all_requests();
+    m_io_ring->submit(*this);
 }
 
 void WorkItem::submit(
@@ -63,8 +60,7 @@ void WorkItem::submit(
 
     m_callback = cb;
     m_work_type = Type::CONNECT;
-    m_network->re_submit(*this);
-    m_network->submit_all_requests();
+    m_io_ring->submit(*this);
 }
 
 
@@ -72,8 +68,7 @@ void WorkItem::submit(const close_callback_func_t& cb)
 {
     m_callback = cb;
     m_work_type = Type::CLOSE;
-    m_network->re_submit(*this);
-    m_network->submit_all_requests();
+    m_io_ring->submit(*this);
 }
 
 SocketType get_type(const AcceptResult& res)

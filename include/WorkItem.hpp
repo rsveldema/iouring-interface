@@ -82,7 +82,7 @@ public:
     WorkItem(const std::shared_ptr<IOUringInterface>& network,
         work_item_id_t id, const char* descr, const std::shared_ptr<ISocket>& s)
         : m_work_type(Type::UNKNOWN)
-        , m_network(network)
+        , m_io_ring(network)
         , m_id(id)
         , m_socket(s)
         , m_descr(descr)
@@ -254,7 +254,7 @@ private:
 
     SendPacket m_send_packet;
     Type m_work_type;
-    std::shared_ptr<IOUringInterface> m_network;
+    std::shared_ptr<IOUringInterface> m_io_ring;
     work_item_id_t m_id;
 
     std::variant<connect_callback_func_t, accept_callback_func_t,

@@ -30,7 +30,7 @@ public:
 
     virtual Error poll_completion_queues() = 0;
 
-    virtual void re_submit(WorkItem& item) = 0;
+    virtual void submit(WorkItem& item) = 0;
 
     virtual void submit_connect(const std::shared_ptr<ISocket>& socket,
         const IPAddress& target, connect_callback_func_t handler) = 0;
@@ -60,7 +60,7 @@ public:
     virtual void submit_close(const std::shared_ptr<ISocket>& socket,
         close_callback_func_t handler) = 0;
 
-    virtual void submit_all_requests() = 0;
+    //virtual void submit_all_requests() = 0;
 
 
     /** @returns aa:bb:cc:dd:ee:ff

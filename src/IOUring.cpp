@@ -198,7 +198,7 @@ io_uring_sqe* IOUring::get_sqe()
 }
 
 
-void IOUring::re_submit(WorkItem& item)
+void IOUring::submit(WorkItem& item)
 {
     auto* sqe = get_sqe();
     io_uring_sqe_set_data(sqe, (void*) item.m_id);
@@ -313,6 +313,8 @@ void IOUring::re_submit(WorkItem& item)
         break;
     }
     }
+
+    submit_all_requests();
 }
 
 void IOUring::call_close_callback(
@@ -567,7 +569,7 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
     {
     case WorkItem::Type::ACCEPT:
         call_accept_callback(work_item, cqe);
-        re_submit(*work_item);
+        submit(*work_item);
         break;
 
     case WorkItem::Type::CLOSE:
@@ -581,7 +583,7 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         case ReceivePostAction::NONE:
             break;
         case ReceivePostAction::RE_SUBMIT:
-            re_submit(*work_item);
+            submit(*work_item);
             break;
         }
         break;
@@ -605,7 +607,7 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
 
 void IOUring::send_packet(const std::shared_ptr<WorkItem>& work_item)
 {
-    re_submit(*work_item);
+    submit(*work_item);
 }
 
 
