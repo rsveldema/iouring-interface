@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.18)
 
 project(io_uring_interface_suite CXX)
 
-add_library(io_uring_interface_lib
+include(CTest)
+
+enable_testing()
+
+add_library(iuring
     src/WorkPool.cpp
     src/WorkItem.cpp
     src/SocketImpl.cpp
@@ -14,17 +18,17 @@ add_library(io_uring_interface_lib
     src/ShellUtils.cpp
 )
 
-target_link_libraries(io_uring_interface_lib -luring ${UUID_LIBRARIES})
-target_include_directories(io_uring_interface_lib PUBLIC include PUBLIC ${PROJECT_BINARY_DIR})
-set_property(TARGET io_uring_interface_lib PROPERTY CXX_STANDARD 20)
+target_link_libraries(iuring -luring ${UUID_LIBRARIES})
+target_include_directories(iuring PUBLIC include PUBLIC ${PROJECT_BINARY_DIR})
+set_property(TARGET iuring PROPERTY CXX_STANDARD 20)
 
 add_executable(ping src/ping.cpp)
 set_property(TARGET ping PROPERTY CXX_STANDARD 20)
-target_link_libraries(ping io_uring_interface_lib)
+target_link_libraries(ping iuring)
 
 add_executable(echo_server src/echo_server.cpp)
 set_property(TARGET echo_server PROPERTY CXX_STANDARD 20)
-target_link_libraries(echo_server io_uring_interface_lib)
+target_link_libraries(echo_server iuring)
 
 find_package(GTest)
 
