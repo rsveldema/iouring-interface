@@ -13,11 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: Install requirements
+      run: sudo apt install liburing-dev
+    - name: Create build dir
+      run: mkdir -p build
+    - name: config
+      run: cmake -S . -B build
+    - name: build
+      run: cmake --build build
