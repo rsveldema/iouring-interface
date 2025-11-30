@@ -37,21 +37,9 @@ class IOUringInterface;
 class WorkItem : public IWorkItem
 {
 public:
-    enum class Type
-    {
-        UNKNOWN,
-        ACCEPT,
-        SEND,
-        RECV,
-        CONNECT,
-        CLOSE
-    };
-
-
     WorkItem(Logger& logger, const std::shared_ptr<IOUringInterface>& network,
         work_item_id_t id, const char* descr, const std::shared_ptr<ISocket>& s)
         : m_logger(logger)
-        ,  m_work_type(Type::UNKNOWN)
         , m_io_ring(network)
         , m_id(id)
         , m_socket(s)
@@ -74,11 +62,6 @@ public:
     {
         assert(m_state == State::IN_USE);
         m_state = State::FREE;
-    }
-
-    Type get_type() const
-    {
-        return m_work_type;
     }
 
     static const char* type_to_string(Type t);
@@ -109,19 +92,9 @@ public:
         m_send_packet.reset();
     }
 
-    void examine_control_data();
-
-    void do_normal_socket_event();
-
     std::shared_ptr<ISocket> get_socket() const
     {
         return m_socket;
-    }
-
-    void set_socket(const std::shared_ptr<ISocket>& s, const char* descr)
-    {
-        m_socket = s;
-        m_descr = descr;
     }
 
     work_item_id_t get_id() const
@@ -209,7 +182,6 @@ public:
         return m_link_to_next_request;
     }
 
-
 private:
     enum class State
     {
@@ -222,7 +194,6 @@ private:
     State m_state = State::IN_USE;
 
     SendPacket m_send_packet;
-    Type m_work_type;
     std::shared_ptr<IOUringInterface> m_io_ring;
     work_item_id_t m_id;
 

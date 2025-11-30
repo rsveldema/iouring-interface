@@ -11,9 +11,27 @@ namespace network
 class IWorkItem
 {
 public:
+    enum class Type
+    {
+        UNKNOWN,
+        ACCEPT,
+        SEND,
+        RECV,
+        CONNECT,
+        CLOSE
+    };
+
     virtual ~IWorkItem() {}
+
+    Type get_type() const
+    {
+        return m_work_type;
+    }
 
     virtual SendPacket& get_send_packet() = 0;
     virtual void submit(const send_callback_func_t& cb) = 0;
+
+protected:
+    Type m_work_type = Type::UNKNOWN;
 };
 } // namespace network

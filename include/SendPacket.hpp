@@ -1,11 +1,11 @@
 #pragma once
 
-#include <array>
 #include <stdlib.h>
-#include <string>
-#include <cassert>
 #include <arpa/inet.h>
 
+#include <array>
+#include <string>
+#include <cassert>
 
 namespace network
 {
@@ -83,6 +83,11 @@ public:
     const uint8_t* data() const
     {
         return m_buf.data();
+    }
+
+    std::string to_string() const
+    {
+        return std::string(reinterpret_cast<const char*>( m_buf.data() ), m_size);
     }
 
 private:

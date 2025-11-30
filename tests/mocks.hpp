@@ -9,6 +9,21 @@ namespace network
 {
 namespace mocks
 {
+    class Socket : public ISocket
+    {
+    public:
+        Socket(SocketType type, SocketPortID port, Logger& logger,
+            SocketKind kind, int fd)
+            : ISocket(type, port, logger, kind, fd)
+        {
+        }
+
+        MOCK_METHOD(int, mcast_bind, (), (override));
+        MOCK_METHOD(void, join_multicast_group,
+            (const std::string& ip_address, const std::string& source_iface),
+            (override));
+    };
+
     class WorkItem : public IWorkItem
     {
     public:

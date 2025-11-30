@@ -317,7 +317,7 @@ void IOUring::submit(IWorkItem& _item)
             const auto& sp = item.get_raw_send_packet();
 
             LOG_INFO(
-                get_logger(), "sending %ld bytes (%s)\n", sp.size(), sp.data());
+                get_logger(), "sending %ld bytes (%s)", sp.size(), sp.data());
             io_uring_prep_send(sqe, fd, sp.data(), sp.size(), flags);
         }
         else
@@ -345,7 +345,7 @@ void IOUring::call_close_callback(
     std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
 {
     const int status = cqe->res;
-    LOG_DEBUG(get_logger(), "=======> CLOSE CALLBACK: %d\n", cqe->res);
+    LOG_DEBUG(get_logger(), "=======> CLOSE CALLBACK: %d", cqe->res);
     work_item->call_close_callback(status);
 }
 
@@ -353,7 +353,7 @@ void IOUring::call_close_callback(
 void IOUring::call_send_callback(
     std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
 {
-    LOG_DEBUG(get_logger(), "=======> SEND CALLBACK: %d\n", cqe->res);
+    LOG_DEBUG(get_logger(), "=======> SEND CALLBACK: %d", cqe->res);
     if (cqe->res < 0)
     {
         LOG_ERROR(get_logger(), "recv cqe bad res %d", cqe->res);

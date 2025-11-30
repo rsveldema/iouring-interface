@@ -98,6 +98,9 @@ std::optional<int32_t> parse_int(const std::string& s)
     {
         return std::nullopt;
     }
+    if (end == s.c_str()) {
+        return std::nullopt;
+    }
     return ret;
 }
 

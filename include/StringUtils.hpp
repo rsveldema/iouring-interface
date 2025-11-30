@@ -42,7 +42,11 @@ std::string array_to_string(const std::array<T, N>& arr)
 }
 
 
+/** Result are appended strings with each prefixed by a byte of length
+*/
 std::string to_mdns_string(const std::vector<std::string>& list);
+
+/** creates a string: [elt1, elt2, ...] */
 std::string to_string(const std::vector<std::string>& list);
 
 std::vector<std::string> split(const std::string_view& s, const char sep);

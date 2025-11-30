@@ -43,7 +43,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/out/build/Debugging/tests/unittests",
             "args": [
-                "--gtest_filter=*check_parse_sources_sourceId*"
+                "--gtest_filter=*TestSendPacket*"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
