@@ -1,7 +1,8 @@
 #include <iuring/ShellUtils.hpp>
 
-namespace shell
+namespace iuring::shell
 {
+    
 void run_cmd(const std::string& cmd, logging::ILogger& logger, RunOpt opt)
 {
     LOG_INFO(logger, "run_cmd: " + cmd);
@@ -21,4 +22,4 @@ void run_cmd(const std::string& cmd, logging::ILogger& logger, RunOpt opt)
     }
 }
 
-} // namespace shell
+} // namespace iuring::shell

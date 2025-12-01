@@ -7,11 +7,26 @@
 #include <sys/socket.h>
 
 #include <iuring/ILogger.hpp>
-#include <iuring/SocketImpl.hpp>
-#include <iuring/WorkItem.hpp>
+
+#include "SocketImpl.hpp"
+#include "WorkItem.hpp"
+
 
 namespace iuring
 {
+std::shared_ptr<ISocket> ISocket::create_impl(
+    logging::ILogger& logger, const AcceptResult& new_conn)
+{
+    return SocketImpl::create(logger, new_conn);
+}
+
+
+std::shared_ptr<ISocket> ISocket::create_impl(SocketType type,
+        SocketPortID port, logging::ILogger& logger, SocketKind kind)
+{
+    return SocketImpl::create(type, port, logger, kind);
+}
+
 std::shared_ptr<SocketImpl> SocketImpl::create(
     logging::ILogger& logger, const AcceptResult& new_conn)
 {
@@ -26,14 +41,14 @@ std::shared_ptr<SocketImpl> SocketImpl::create(
     return std::make_shared<EnableShared>(logger, new_conn);
 }
 
-std::shared_ptr<SocketImpl> SocketImpl::create(
-    SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind)
+std::shared_ptr<SocketImpl> SocketImpl::create(SocketType type,
+    SocketPortID port, logging::ILogger& logger, SocketKind kind)
 {
     class EnableShared : public SocketImpl
     {
     public:
-        EnableShared(
-            SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind)
+        EnableShared(SocketType type, SocketPortID port,
+            logging::ILogger& logger, SocketKind kind)
             : SocketImpl(type, port, logger, kind)
         {
         }
@@ -93,8 +108,8 @@ namespace
     }
 } // namespace
 
-SocketImpl::SocketImpl(
-    SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind)
+SocketImpl::SocketImpl(SocketType type, SocketPortID port,
+    logging::ILogger& logger, SocketKind kind)
     : ISocket(type, port, logger, kind, create_socket(logger, type))
 {
     memset(&m_mreq, 0, sizeof(m_mreq));

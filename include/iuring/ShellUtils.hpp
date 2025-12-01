@@ -5,7 +5,7 @@
 #include <iuring/ILogger.hpp>
 
 
-namespace shell
+namespace iuring::shell
 {
     enum class RunOpt
     {
@@ -14,4 +14,4 @@ namespace shell
     };
 
     void run_cmd(const std::string& cmd, logging::ILogger& logger, RunOpt opt);
-}
+} // namespace iuring::shell

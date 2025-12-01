@@ -1,6 +1,6 @@
 #include <memory>
 
-#include <iuring/WorkPool.hpp>
+#include "WorkPool.hpp"
 #include <iuring/IOUringInterface.hpp>
 
 namespace iuring

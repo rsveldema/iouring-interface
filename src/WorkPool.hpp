@@ -25,7 +25,7 @@
 
 #include <iuring/ILogger.hpp>
 #include <iuring/UringDefs.hpp>
-#include <iuring/WorkItem.hpp>
+#include "WorkItem.hpp"
 
 namespace iuring
 {

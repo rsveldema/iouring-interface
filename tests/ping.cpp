@@ -1,5 +1,6 @@
-#include <iuring/IOUring.hpp>
-#include <iuring/SocketImpl.hpp>
+#include <iuring/IOUringInterface.hpp>
+#include <iuring/NetworkAdapter.hpp>
+#include <iuring/ISocket.hpp>
 #include <iuring/TimeUtils.hpp>
 #include <iuring/Logger.hpp>
 
@@ -58,10 +59,10 @@ void do_http_ping(const iuring::IPAddress& ping_addr, logging::ILogger& logger,
 
 
     iuring::NetworkAdapter adapter(logger, interface_name, tune);
-    auto io = iuring::IOUring::create(logger, adapter);
+    auto io = iuring::IOUringInterface::create_impl(logger, adapter);
     io->init();
 
-    auto socket = iuring::SocketImpl::create(iuring::SocketType::IPV4_TCP,
+    auto socket = iuring::ISocket::create_impl(iuring::SocketType::IPV4_TCP,
         port, logger, iuring::SocketKind::CLIENT_SOCKET);
     io->submit_connect(
         socket, ping_addr, [io, socket](const iuring::ConnectResult& res) {

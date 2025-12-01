@@ -2,7 +2,7 @@
 
 #include "mocks.hpp"
 
-#include <iuring/WorkPool.hpp>
+#include "../src/WorkPool.hpp"
 #include <iuring/Logger.hpp>
 
 using testing::_;

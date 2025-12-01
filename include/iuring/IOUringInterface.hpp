@@ -14,6 +14,7 @@
 #include "Error.hpp"
 #include "IWorkItem.hpp"
 #include "CompletionCallbacks.hpp"
+#include "NetworkAdapter.hpp"
 
 namespace iuring
 {
@@ -21,6 +22,8 @@ class IOUringInterface
 {
 public:
     virtual ~IOUringInterface() {}
+
+    static std::shared_ptr<IOUringInterface> create_impl(logging::ILogger& logger, NetworkAdapter& adapter);
 
     virtual Error init() = 0;
 

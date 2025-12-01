@@ -3,13 +3,21 @@
 
 #include <thread>
 
-#include <iuring/IOUring.hpp>
-#include <iuring/ProbeUringFeatures.hpp>
-#include <iuring/SocketImpl.hpp>
-#include <iuring/WorkItem.hpp>
+#include "IOUring.hpp"
+#include "ProbeUringFeatures.hpp"
+#include "SocketImpl.hpp"
+#include "WorkItem.hpp"
 
 namespace iuring
 {
+
+std::shared_ptr<IOUringInterface> IOUringInterface::create_impl(
+    logging::ILogger& logger, NetworkAdapter& adapter)
+{
+    return IOUring::create(logger, adapter);
+}
+
+
 std::shared_ptr<IOUring> IOUring::create(
     logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
 {

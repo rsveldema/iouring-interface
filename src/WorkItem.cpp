@@ -1,5 +1,5 @@
 #include <iuring/IOUringInterface.hpp>
-#include <iuring/WorkItem.hpp>
+#include "WorkItem.hpp"
 
 namespace iuring
 {

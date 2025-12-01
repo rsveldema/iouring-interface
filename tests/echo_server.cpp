@@ -1,5 +1,5 @@
-#include <iuring/IOUring.hpp>
-#include <iuring/SocketImpl.hpp>
+#include <iuring/IOUringInterface.hpp>
+#include <iuring/ISocket.hpp>
 #include <iuring/TimeUtils.hpp>
 
 #include <iuring/Logger.hpp>
@@ -19,7 +19,7 @@ void handle_new_connection(const iuring::AcceptResult& res,
     const std::shared_ptr<iuring::IOUringInterface>& io,
     logging::ILogger& logger)
 {
-    auto socket = iuring::SocketImpl::create(logger, res);
+    auto socket = iuring::ISocket::create_impl(logger, res);
 
     io->submit_recv(socket, [](const iuring::ReceivedMessage& msg) {
         fprintf(stderr, "received: %s\n", msg.to_string().c_str());
@@ -33,11 +33,11 @@ void do_webserver(logging::ILogger& logger, const std::string& interface_name, b
 
     LOG_INFO(logger, "going to do a simple websever\n");
 
-    auto socket = iuring::SocketImpl::create(iuring::SocketType::IPV4_TCP,
+    auto socket = iuring::ISocket::create_impl(iuring::SocketType::IPV4_TCP,
             port, logger, iuring::SocketKind::SERVER_STREAM_SOCKET);
 
     iuring::NetworkAdapter adapter(logger, interface_name, tune);
-    auto io = iuring::IOUring::create(logger, adapter);
+    auto io = iuring::IOUringInterface::create_impl(logger, adapter);
     io->init();
 
     io->submit_accept(

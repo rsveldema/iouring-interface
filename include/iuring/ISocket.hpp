@@ -3,7 +3,7 @@
 /**
  * @file ISocket.hpp
  * @brief Defines the ISocket interface for network sockets.
- * 
+ *
  * This interface provides the basic functionalities for different types of
  * network sockets, including multicast binding and joining multicast groups.
  * The real implementations will derive from this interface.
@@ -23,16 +23,19 @@
 #include <cstring>
 
 #include <iuring/ILogger.hpp>
-#include <iuring/StringUtils.hpp>
 #include <iuring/IPAddress.hpp>
+#include <iuring/StringUtils.hpp>
+
 
 namespace iuring
 {
+class AcceptResult;
+
 class ISocket
 {
 public:
-    ISocket(SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind,
-        int fd)
+    ISocket(SocketType type, SocketPortID port, logging::ILogger& logger,
+        SocketKind kind, int fd)
         : m_type(type)
         , m_port(port)
         , m_logger(logger)
@@ -41,9 +44,18 @@ public:
     {
     }
 
+    static std::shared_ptr<ISocket> create_impl(SocketType type,
+        SocketPortID port, logging::ILogger& logger, SocketKind kind);
+
+    static std::shared_ptr<ISocket> create_impl(
+        logging::ILogger& logger, const AcceptResult& res);
+
     virtual ~ISocket() = default;
 
-    int get_fd() const { return m_fd; }
+    int get_fd() const
+    {
+        return m_fd;
+    }
 
     virtual int mcast_bind() = 0;
     virtual void join_multicast_group(
@@ -54,7 +66,10 @@ public:
         return m_port;
     }
 
-    SocketKind get_kind() const { return m_kind; }
+    SocketKind get_kind() const
+    {
+        return m_kind;
+    }
 
     bool is_stream() const
     {
