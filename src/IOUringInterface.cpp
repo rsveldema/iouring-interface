@@ -1,14 +1,14 @@
-#include <IOUring.hpp>
-#include <ShellUtils.hpp>
 #include <chrono>
 #include <ifaddrs.h>
 #include <thread>
 
-#include "IOUringInterface.hpp"
+#include <iuring/IOUring.hpp>
+#include <iuring/ShellUtils.hpp>
+#include <iuring/IOUringInterface.hpp>
 
 using namespace std::chrono_literals;
 
-namespace network
+namespace iuring
 {
 
 Error errno_to_error(int err)
@@ -152,4 +152,4 @@ std::optional<MacAddress> NetworkAdapter::get_my_mac_address()
 }
 
 
-} // namespace network
+} // namespace iuring

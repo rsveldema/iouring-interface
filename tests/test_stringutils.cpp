@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <StringUtils.hpp>
+#include <iuring/StringUtils.hpp>
 
 namespace Tests
 {

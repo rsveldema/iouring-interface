@@ -1,6 +1,6 @@
 #pragma once
 
-namespace network
+namespace iuring
 {
 class MacAddress
 {
@@ -18,4 +18,4 @@ public:
 private:
     std::string m_value;
 };
-} // namespace network
+} // namespace iuring

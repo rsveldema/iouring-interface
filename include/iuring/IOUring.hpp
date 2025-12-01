@@ -1,23 +1,28 @@
 #pragma once
 
+/**
+ * @file IOUring.hpp
+ * @brief Defines the IOUring class for asynchronous I/O operations using io_uring.
+ */
+
+#include <liburing.h>
+
 #include <stack>
 
 #include "Error.hpp"
 #include "NetworkAdapter.hpp"
-
 #include "IOUringInterface.hpp"
 #include "WorkPool.hpp"
 
-#include <liburing.h>
 
 static constexpr size_t DEFAULT_QUEUE_SIZE = 64;
 
-namespace network
+namespace iuring
 {
 class IOUring : public IOUringInterface, public std::enable_shared_from_this<IOUring>
 {
 private:
-    IOUring(Logger& logger, NetworkAdapter& adapter, size_t queue_size);
+    IOUring(logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size);
 
     IOUring(const IOUring&) = delete;
     IOUring& operator=(const IOUring&) = delete;
@@ -25,7 +30,7 @@ private:
     IOUring& operator=(IOUring&&) = delete;
 
 public:
-    static std::shared_ptr<IOUring> create(Logger& logger, NetworkAdapter& adapter, size_t queue_size = DEFAULT_QUEUE_SIZE);
+    static std::shared_ptr<IOUring> create(logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size = DEFAULT_QUEUE_SIZE);
 
     ~IOUring();
 
@@ -62,7 +67,7 @@ private:
     static constexpr auto BUFFERS = CQES;
 
     bool m_initialized = false;
-    Logger& m_logger;
+    logging::ILogger& m_logger;
     size_t m_queue_size = 0;
     io_uring_buf_reg m_reg;
 
@@ -76,7 +81,7 @@ private:
     NetworkAdapter& m_adapter;
     WorkPool m_pool;
 
-    Logger& get_logger()
+    logging::ILogger& get_logger()
     {
         return m_logger;
     }
@@ -136,4 +141,4 @@ private:
     void call_accept_callback(
         std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe);
 };
-} // namespace network
+} // namespace iuring

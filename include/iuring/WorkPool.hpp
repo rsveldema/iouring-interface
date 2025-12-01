@@ -23,23 +23,23 @@
 #include <string>
 #include <vector>
 
-#include <Logger.hpp>
-#include <UringDefs.hpp>
-#include <WorkItem.hpp>
+#include <iuring/ILogger.hpp>
+#include <iuring/UringDefs.hpp>
+#include <iuring/WorkItem.hpp>
 
-namespace network
+namespace iuring
 {
 class IOUringInterface;
 
 class WorkPool
 {
 public:
-    explicit WorkPool(Logger& logger)
+    explicit WorkPool(logging::ILogger& logger)
         : m_logger(logger)
     {
     }
 
-    Logger& get_logger()
+    logging::ILogger& get_logger()
     {
         return m_logger;
     }
@@ -67,7 +67,7 @@ public:
 
     std::shared_ptr<WorkItem> alloc_close_work_item(
         const std::shared_ptr<ISocket>& socket,
-        const std::shared_ptr<network::IOUringInterface>& network,
+        const std::shared_ptr<iuring::IOUringInterface>& network,
         const close_callback_func_t& callback, const char* descr);
 
 
@@ -82,7 +82,7 @@ public:
 
 
 private:
-    Logger& m_logger;
+    logging::ILogger& m_logger;
     std::recursive_mutex m_mutex;
     /** because we pass indices into this array into io_uring, we are not
      * allowed to shrink this using erase(), we therefore append only and have
@@ -98,4 +98,4 @@ private:
 };
 
 
-} // namespace network
+} // namespace iuring

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Error.hpp>
+#include <iuring/Error.hpp>
 
-namespace network
+namespace iuring
 {
 enum class UringFeature
 {
@@ -51,4 +51,4 @@ enum class UringFeature
     IORING_OP_LISTEN,
 #endif
 };
-} // namespace network
+} // namespace iuring

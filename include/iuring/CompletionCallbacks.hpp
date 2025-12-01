@@ -1,6 +1,11 @@
 #pragma once
 
-namespace network
+/**
+ * @file CompletionCallbacks.hpp
+ * @brief Defines callback function types for network operations.
+ */
+
+namespace iuring
 {
 enum class [[nodiscard]] ReceivePostAction{ NONE, RE_SUBMIT };
 
@@ -39,4 +44,4 @@ using connect_callback_func_t =
 
 using close_callback_func_t = std::function<void(const CloseResult& result)>;
 
-} // namespace network
+} // namespace iuring

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-#include <Logger.hpp>
+
+#include <iuring/ILogger.hpp>
 
 
 namespace shell
@@ -12,5 +13,5 @@ namespace shell
         ABORT_ON_ERROR
     };
 
-    void run_cmd(const std::string& cmd, Logger& logger, RunOpt opt);
+    void run_cmd(const std::string& cmd, logging::ILogger& logger, RunOpt opt);
 }

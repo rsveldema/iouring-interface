@@ -1,17 +1,17 @@
 #include <ifaddrs.h>
 #include <sys/mman.h>
 
-#include <IOUring.hpp>
-#include <ProbeUringFeatures.hpp>
 #include <thread>
 
-#include <SocketImpl.hpp>
-#include <WorkItem.hpp>
+#include <iuring/IOUring.hpp>
+#include <iuring/ProbeUringFeatures.hpp>
+#include <iuring/SocketImpl.hpp>
+#include <iuring/WorkItem.hpp>
 
-namespace network
+namespace iuring
 {
 std::shared_ptr<IOUring> IOUring::create(
-    Logger& logger, NetworkAdapter& adapter, size_t queue_size)
+    logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
 {
     /** make_shared<> does not work with private ctors
      * so we inherit from it with a public ctor
@@ -20,7 +20,7 @@ std::shared_ptr<IOUring> IOUring::create(
     class EnableShared : public IOUring
     {
     public:
-        EnableShared(Logger& logger, NetworkAdapter& adapter, size_t queue_size)
+        EnableShared(logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
             : IOUring(logger, adapter, queue_size)
         {
         }
@@ -30,7 +30,7 @@ std::shared_ptr<IOUring> IOUring::create(
 }
 
 
-IOUring::IOUring(Logger& logger, NetworkAdapter& adapter, size_t queue_size)
+IOUring::IOUring(logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
     : m_logger(logger)
     , m_queue_size(queue_size)
     , m_adapter(adapter)
@@ -385,7 +385,7 @@ void IOUring::call_connect_callback(
     }
 
     const int status = cqe->res;
-    const network::IPAddress addr(
+    const iuring::IPAddress addr(
         work_item->m_buffer_for_uring, work_item->m_connect_sock_len);
     const ConnectResult new_conn{ .status = status, .m_address = addr };
 
@@ -415,7 +415,7 @@ void IOUring::call_accept_callback(
 
     fprintf(stderr, " XQE - res = %d\n", fd);
 
-    const network::IPAddress addr(
+    const iuring::IPAddress addr(
         work_item->m_buffer_for_uring, work_item->m_accept_sock_len);
     const AcceptResult new_conn{ .m_new_fd = fd, .m_address = addr };
 
@@ -474,7 +474,7 @@ ReceivePostAction IOUring::call_recv_handler_datagram(const uint8_t* buffer,
         return ReceivePostAction::RE_SUBMIT;
     }
 
-    network::IPAddress source_addr;
+    iuring::IPAddress source_addr;
     switch (recv_msg_out->namelen)
     {
     case 0:
@@ -717,4 +717,4 @@ void IOUring::submit_close(
 }
 
 
-} // namespace network
+} // namespace iuring

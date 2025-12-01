@@ -1,4 +1,3 @@
-#include <Logger.hpp>
 #include <cassert>
 #include <cstdint>
 #include <ctime>
@@ -7,12 +6,16 @@
 #include <string>
 #include <cstring>
 
-static int count_loggers = 0;
+#include <iuring/Logger.hpp>
 
+namespace logging
+{
+    namespace {
+         int count_loggers = 0;
+    }
 
 Logger::Logger(bool debug, bool info, LogOutput output)
-    : m_debug(debug)
-    , m_info(info)
+    : ILogger(debug, info)
     , m_output(output)
 {
     count_loggers++;
@@ -125,3 +128,4 @@ const char* strip_prefix(const char* path)
 
     return path;
 }
+} // namespace logging

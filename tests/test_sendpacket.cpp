@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 
 #include "mocks.hpp"
-#include <SendPacket.hpp>
+
+#include <iuring/SendPacket.hpp>
 
 using testing::_;
 
@@ -10,7 +11,7 @@ namespace Tests
 {
     TEST(TestSendPacket, test_sp)
     {
-        network::SendPacket sp;
+        iuring::SendPacket sp;
         sp.append("hello");
         ASSERT_EQ(sp.size(), strlen("hello"));
         sp.append("");

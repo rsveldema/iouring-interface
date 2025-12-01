@@ -1,12 +1,20 @@
 #pragma once
 
+/**
+ * @file IWorkItem.hpp
+ * @brief Defines the IWorkItem interface for work items in asynchronous I/O operations.
+ * 
+ * This interface provides the basic functionalities for different types of
+ * work items, such as sending, receiving, connecting, etc.
+ */
+
 #include <functional>
 
 #include "ReceivedMessage.hpp"
 #include "SendPacket.hpp"
 #include "CompletionCallbacks.hpp"
 
-namespace network
+namespace iuring
 {
 class IWorkItem
 {
@@ -34,4 +42,4 @@ public:
 protected:
     Type m_work_type = Type::UNKNOWN;
 };
-} // namespace network
+} // namespace iuring

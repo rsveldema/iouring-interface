@@ -7,7 +7,7 @@
 #include <string>
 #include <cassert>
 
-namespace network
+namespace iuring
 {
 class SendPacket
 {
@@ -95,4 +95,4 @@ private:
     std::array<uint8_t, 4096> m_buf;
 };
 
-} // namespace network
+} // namespace iuring

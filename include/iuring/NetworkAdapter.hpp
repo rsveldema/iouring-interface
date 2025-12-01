@@ -3,15 +3,15 @@
 #include <string>
 #include <optional>
 
-#include "Logger.hpp"
+#include "ILogger.hpp"
 #include "MacAddress.hpp"
 
-namespace network
+namespace iuring
 {
 class NetworkAdapter
 {
 public:
-    NetworkAdapter(Logger& logger, const std::string& interface_name, bool tune)
+    NetworkAdapter(logging::ILogger& logger, const std::string& interface_name, bool tune)
     : m_logger(logger),
       m_interface_name(interface_name)
     , m_tune(tune)
@@ -49,7 +49,7 @@ public:
     }
 
 private:
-    Logger& m_logger;
+    logging::ILogger& m_logger;
 
     std::optional<std::string> m_interface_ip4;
     std::optional<std::string> m_interface_ip6;
@@ -60,7 +60,7 @@ private:
     bool try_get_interface_ip();
     void retrieve_interface_ip();
 
-    Logger& get_logger()
+    logging::ILogger& get_logger()
     {
         return m_logger;
     }

@@ -1,8 +1,13 @@
 #pragma once
 
+/**
+ * @file IOUringInterface.hpp
+ * @brief Defines the IOUringInterface for asynchronous I/O operations.
+ */
+
 #include <memory>
 
-#include "Logger.hpp"
+#include "ILogger.hpp"
 #include "MacAddress.hpp"
 #include "IPAddress.hpp"
 #include "ISocket.hpp"
@@ -10,7 +15,7 @@
 #include "IWorkItem.hpp"
 #include "CompletionCallbacks.hpp"
 
-namespace network
+namespace iuring
 {
 class IOUringInterface
 {
@@ -58,4 +63,4 @@ public:
 };
 
 
-} // namespace network
+} // namespace iuring

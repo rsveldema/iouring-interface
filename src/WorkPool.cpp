@@ -1,9 +1,9 @@
 #include <memory>
 
-#include <WorkPool.hpp>
-#include <IOUringInterface.hpp>
+#include <iuring/WorkPool.hpp>
+#include <iuring/IOUringInterface.hpp>
 
-namespace network
+namespace iuring
 {
 std::shared_ptr<WorkItem> WorkPool::get_work_item(work_item_id_t id)
 {
@@ -39,7 +39,7 @@ void WorkPool::free_work_item(work_item_id_t id)
 
 std::shared_ptr<WorkItem> WorkPool::internal_alloc_work_item(
     const std::shared_ptr<ISocket>& socket,
-    const std::shared_ptr<network::IOUringInterface>& network,
+    const std::shared_ptr<iuring::IOUringInterface>& network,
     const char* descr)
 {
     if (m_free_ids.empty())
@@ -68,7 +68,7 @@ std::shared_ptr<WorkItem> WorkPool::internal_alloc_work_item(
 
 std::shared_ptr<WorkItem> WorkPool::alloc_send_work_item(
     const std::shared_ptr<ISocket>& socket,
-    const std::shared_ptr<network::IOUringInterface>& network,
+    const std::shared_ptr<iuring::IOUringInterface>& network,
     const char* descr)
 {
     std::lock_guard lock(m_mutex);
@@ -79,7 +79,7 @@ std::shared_ptr<WorkItem> WorkPool::alloc_send_work_item(
 
 std::shared_ptr<WorkItem> WorkPool::alloc_recv_work_item(
     const std::shared_ptr<ISocket>& socket,
-    const std::shared_ptr<network::IOUringInterface>& network,
+    const std::shared_ptr<iuring::IOUringInterface>& network,
     const recv_callback_func_t& callback, const char* descr)
 {
     std::lock_guard lock(m_mutex);
@@ -91,7 +91,7 @@ std::shared_ptr<WorkItem> WorkPool::alloc_recv_work_item(
 
 std::shared_ptr<WorkItem> WorkPool::alloc_accept_work_item(
     const std::shared_ptr<ISocket>& socket,
-    const std::shared_ptr<network::IOUringInterface>& network,
+    const std::shared_ptr<iuring::IOUringInterface>& network,
     const accept_callback_func_t& callback, const char* descr)
 {
     std::lock_guard lock(m_mutex);
@@ -104,7 +104,7 @@ std::shared_ptr<WorkItem> WorkPool::alloc_accept_work_item(
 std::shared_ptr<WorkItem> WorkPool::alloc_connect_work_item(
     const IPAddress& target,
     const std::shared_ptr<ISocket>& socket,
-    const std::shared_ptr<network::IOUringInterface>& network,
+    const std::shared_ptr<iuring::IOUringInterface>& network,
     const connect_callback_func_t& callback, const char* descr)
 {
     std::lock_guard lock(m_mutex);
@@ -117,7 +117,7 @@ std::shared_ptr<WorkItem> WorkPool::alloc_connect_work_item(
 
 std::shared_ptr<WorkItem> WorkPool::alloc_close_work_item(
     const std::shared_ptr<ISocket>& socket,
-    const std::shared_ptr<network::IOUringInterface>& network,
+    const std::shared_ptr<iuring::IOUringInterface>& network,
     const close_callback_func_t& callback, const char* descr)
 {
     std::lock_guard lock(m_mutex);
@@ -127,4 +127,4 @@ std::shared_ptr<WorkItem> WorkPool::alloc_close_work_item(
     return wi;
 }
 
-} // namespace network
+} // namespace iuring

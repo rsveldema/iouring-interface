@@ -1,5 +1,15 @@
 #pragma once
 
+/**
+ * @file ISocket.hpp
+ * @brief Defines the ISocket interface for network sockets.
+ * 
+ * This interface provides the basic functionalities for different types of
+ * network sockets, including multicast binding and joining multicast groups.
+ * The real implementations will derive from this interface.
+ * The main implementation is in SocketImpl.hpp
+ */
+
 #include <net/if.h>
 #include <netinet/in.h>
 #include <optional>
@@ -9,19 +19,19 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <Logger.hpp>
-#include <StringUtils.hpp>
-
-#include <IPAddress.hpp>
 #include <cassert>
 #include <cstring>
 
-namespace network
+#include <iuring/ILogger.hpp>
+#include <iuring/StringUtils.hpp>
+#include <iuring/IPAddress.hpp>
+
+namespace iuring
 {
 class ISocket
 {
 public:
-    ISocket(SocketType type, SocketPortID port, Logger& logger, SocketKind kind,
+    ISocket(SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind,
         int fd)
         : m_type(type)
         , m_port(port)
@@ -69,12 +79,12 @@ public:
     in_port_t get_port_as_int() const
     {
         const auto port_value =
-            static_cast<std::underlying_type_t<network::SocketPortID>>(
+            static_cast<std::underlying_type_t<iuring::SocketPortID>>(
                 get_port());
         return port_value;
     }
 
-    Logger& get_logger()
+    logging::ILogger& get_logger()
     {
         return m_logger;
     }
@@ -82,9 +92,9 @@ public:
 private:
     SocketType m_type;
     SocketPortID m_port;
-    Logger& m_logger;
+    logging::ILogger& m_logger;
     SocketKind m_kind;
     int m_fd;
 };
 
-} // namespace network
+} // namespace iuring

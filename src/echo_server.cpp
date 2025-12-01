@@ -1,6 +1,8 @@
-#include <IOUring.hpp>
-#include <SocketImpl.hpp>
-#include <TimeUtils.hpp>
+#include <iuring/IOUring.hpp>
+#include <iuring/SocketImpl.hpp>
+#include <iuring/TimeUtils.hpp>
+
+#include <iuring/Logger.hpp>
 
 using namespace std::chrono_literals;
 
@@ -13,33 +15,33 @@ static void Usage()
 
 bool should_quit = false;
 
-void handle_new_connection(const network::AcceptResult& res,
-    const std::shared_ptr<network::IOUringInterface>& io,
-    Logger& logger)
+void handle_new_connection(const iuring::AcceptResult& res,
+    const std::shared_ptr<iuring::IOUringInterface>& io,
+    logging::ILogger& logger)
 {
-    auto socket = network::SocketImpl::create(logger, res);
+    auto socket = iuring::SocketImpl::create(logger, res);
 
-    io->submit_recv(socket, [](const network::ReceivedMessage& msg) {
+    io->submit_recv(socket, [](const iuring::ReceivedMessage& msg) {
         fprintf(stderr, "received: %s\n", msg.to_string().c_str());
-        return network::ReceivePostAction::RE_SUBMIT;
+        return iuring::ReceivePostAction::RE_SUBMIT;
     });
 }
 
-void do_webserver(Logger& logger, const std::string& interface_name, bool tune)
+void do_webserver(logging::ILogger& logger, const std::string& interface_name, bool tune)
 {
-    auto port = network::SocketPortID::LOCAL_WEB_PORT;
+    auto port = iuring::SocketPortID::LOCAL_WEB_PORT;
 
     LOG_INFO(logger, "going to do a simple websever\n");
 
-    auto socket = network::SocketImpl::create(network::SocketType::IPV4_TCP,
-            port, logger, network::SocketKind::SERVER_STREAM_SOCKET);
+    auto socket = iuring::SocketImpl::create(iuring::SocketType::IPV4_TCP,
+            port, logger, iuring::SocketKind::SERVER_STREAM_SOCKET);
 
-    network::NetworkAdapter adapter(logger, interface_name, tune);
-    auto io = network::IOUring::create(logger, adapter);
+    iuring::NetworkAdapter adapter(logger, interface_name, tune);
+    auto io = iuring::IOUring::create(logger, adapter);
     io->init();
 
     io->submit_accept(
-        socket, [io, socket, &logger](const network::AcceptResult& res) {
+        socket, [io, socket, &logger](const iuring::AcceptResult& res) {
             assert(res.m_new_fd != 0);
 
             handle_new_connection(res, io, logger);
@@ -57,7 +59,7 @@ void do_webserver(Logger& logger, const std::string& interface_name, bool tune)
 
 int main(int argc, char** argv)
 {
-    Logger logger(true, true, LogOutput::CONSOLE);
+    logging::Logger logger(true, true, logging::LogOutput::CONSOLE);
 
     const std::string interface_name = "eth0";
     bool tune = true;

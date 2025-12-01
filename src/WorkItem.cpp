@@ -1,7 +1,7 @@
-#include <IOUringInterface.hpp>
-#include <WorkItem.hpp>
+#include <iuring/IOUringInterface.hpp>
+#include <iuring/WorkItem.hpp>
 
-namespace network
+namespace iuring
 {
 const char* WorkItem::type_to_string(Type t)
 {
@@ -95,4 +95,4 @@ SocketPortID get_port(const AcceptResult& res)
     return SocketPortID::UNKNOWN;
 }
 
-} // namespace network
+} // namespace iuring

@@ -18,15 +18,14 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <ISocket.hpp>
-#include <NetworkProtocols.hpp>
-#include <ReceivedMessage.hpp>
-#include <SendPacket.hpp>
-#include <UringDefs.hpp>
+#include <iuring/ISocket.hpp>
+#include <iuring/NetworkProtocols.hpp>
+#include <iuring/ReceivedMessage.hpp>
+#include <iuring/SendPacket.hpp>
+#include <iuring/UringDefs.hpp>
+#include <iuring/IWorkItem.hpp>
 
-#include "IWorkItem.hpp"
-
-namespace network
+namespace iuring
 {
 
 using work_item_id_t = uint64_t;
@@ -37,7 +36,7 @@ class IOUringInterface;
 class WorkItem : public IWorkItem
 {
 public:
-    WorkItem(Logger& logger, const std::shared_ptr<IOUringInterface>& network,
+    WorkItem(logging::ILogger& logger, const std::shared_ptr<IOUringInterface>& network,
         work_item_id_t id, const char* descr, const std::shared_ptr<ISocket>& s)
         : m_logger(logger)
         , m_io_ring(network)
@@ -189,7 +188,7 @@ private:
         FREE
     };
 
-    Logger& m_logger;
+    logging::ILogger& m_logger;
 
     State m_state = State::IN_USE;
 
@@ -221,7 +220,7 @@ private:
         return m_sa;
     }
 
-    Logger& get_logger()
+    logging::ILogger& get_logger()
     {
         return m_logger;
     }
@@ -235,4 +234,4 @@ private:
 SocketType get_type(const AcceptResult& res);
 SocketPortID get_port(const AcceptResult& res);
 
-} // namespace network
+} // namespace iuring

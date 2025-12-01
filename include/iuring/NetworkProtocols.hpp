@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <stdlib.h>
 
-namespace network
+namespace iuring
 {
 
 enum class SocketKind
@@ -100,4 +100,4 @@ enum class dscp_t : uint8_t
 };
 
 
-} // namespace network
+} // namespace iuring

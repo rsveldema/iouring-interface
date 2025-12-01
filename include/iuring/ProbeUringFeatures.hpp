@@ -1,6 +1,6 @@
 #pragma once
 
-namespace network
+namespace iuring
 {
     class ProbeUringFeatures
 {
@@ -98,7 +98,7 @@ public:
     }
 
     ProbeUringFeatures(
-        io_uring* ring, Logger& logger)
+        io_uring* ring, logging::ILogger& logger)
         : m_logger(logger)
     {
         m_probe = io_uring_get_probe_ring(ring);
@@ -136,7 +136,7 @@ public:
 
 private:
     std::map<UringFeature, bool> m_features;
-    Logger& m_logger;
+    logging::ILogger& m_logger;
     io_uring_probe* m_probe;
 };
 

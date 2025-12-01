@@ -1,6 +1,11 @@
 #pragma once
 
-namespace network
+/**
+ * @file Error.hpp
+ * @brief Defines error codes and conversion functions for network operations.
+ */
+
+namespace iuring
 {
     
 enum class Error

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
 #include "mocks.hpp"
-#include <WorkPool.hpp>
+
+#include <iuring/WorkPool.hpp>
+#include <iuring/Logger.hpp>
 
 using testing::_;
 
@@ -11,16 +13,16 @@ namespace Tests
 class TestWorkPool : public testing::Test
 {
 public:
-    Logger logger{ true, true, LogOutput::CONSOLE };
-    network::WorkPool wp{ logger };
+    logging::Logger logger{ true, true, logging::LogOutput::CONSOLE };
+    iuring::WorkPool wp{ logger };
 
-    std::shared_ptr<network::mocks::Socket> socket =
-        std::make_shared<network::mocks::Socket>(network::SocketType::IPV4_TCP,
-            network::SocketPortID::LOCAL_WEB_PORT, logger,
-            network::SocketKind::CLIENT_SOCKET, 42);
+    std::shared_ptr<iuring::mocks::Socket> socket =
+        std::make_shared<iuring::mocks::Socket>(iuring::SocketType::IPV4_TCP,
+            iuring::SocketPortID::LOCAL_WEB_PORT, logger,
+            iuring::SocketKind::CLIENT_SOCKET, 42);
 
-    std::shared_ptr<network::mocks::IOUring> io =
-        std::make_shared<network::mocks::IOUring>();
+    std::shared_ptr<iuring::mocks::IOUring> io =
+        std::make_shared<iuring::mocks::IOUring>();
     bool seen_submit = false;
     bool seen_callback = false;
 };
@@ -29,21 +31,21 @@ TEST_F(TestWorkPool, test_wp_accept)
 {
     ASSERT_EQ(socket->get_fd(), 42);
 
-    EXPECT_CALL(*io, submit(_)).WillOnce([this](network::IWorkItem& item) {
-        ASSERT_EQ(item.get_type(), network::IWorkItem::Type::ACCEPT);
+    EXPECT_CALL(*io, submit(_)).WillOnce([this](iuring::IWorkItem& item) {
+        ASSERT_EQ(item.get_type(), iuring::IWorkItem::Type::ACCEPT);
         seen_submit = true;
 
-        auto* k = dynamic_cast<network::WorkItem *>(&item);
+        auto* k = dynamic_cast<iuring::WorkItem *>(&item);
         ASSERT_NE(k, nullptr);
 
-        network::AcceptResult ret;
+        iuring::AcceptResult ret;
         ret.m_new_fd = 12345;
         k->call_accept_callback(ret);
     });
 
     auto item = wp.alloc_accept_work_item(
         socket, io,
-        [this](const network::AcceptResult& result) {
+        [this](const iuring::AcceptResult& result) {
             ASSERT_EQ(result.m_new_fd, 12345);
             seen_callback = true;
         },
@@ -52,7 +54,7 @@ TEST_F(TestWorkPool, test_wp_accept)
     ASSERT_NE(item, nullptr);
     ASSERT_TRUE(seen_submit);
     ASSERT_TRUE(seen_callback);
-    ASSERT_EQ(item->get_type(), network::IWorkItem::Type::ACCEPT);
+    ASSERT_EQ(item->get_type(), iuring::IWorkItem::Type::ACCEPT);
     ASSERT_EQ(socket, item->get_socket());
     ASSERT_EQ(item->get_type_str(), std::string("accept"));
 
@@ -70,18 +72,18 @@ TEST_F(TestWorkPool, test_wp_accept)
 
 TEST_F(TestWorkPool, test_wp_close)
 {
-    EXPECT_CALL(*io, submit(_)).WillOnce([this](network::IWorkItem& item) {
-        ASSERT_EQ(item.get_type(), network::IWorkItem::Type::CLOSE);
+    EXPECT_CALL(*io, submit(_)).WillOnce([this](iuring::IWorkItem& item) {
+        ASSERT_EQ(item.get_type(), iuring::IWorkItem::Type::CLOSE);
         seen_submit = true;
 
-        auto* k = dynamic_cast<network::WorkItem *>(&item);
+        auto* k = dynamic_cast<iuring::WorkItem *>(&item);
         ASSERT_NE(k, nullptr);
         k->call_close_callback(12321);
     });
 
     auto item = wp.alloc_close_work_item(
         socket, io,
-        [](const network::CloseResult& result) {
+        [](const iuring::CloseResult& result) {
             ASSERT_EQ(result.status, 12321);
         },
         "test-close");
@@ -94,26 +96,26 @@ TEST_F(TestWorkPool, test_wp_close)
 
 TEST_F(TestWorkPool, test_wp_connect)
 {
-    EXPECT_CALL(*io, submit(_)).WillOnce([this](network::IWorkItem& item) {
-        ASSERT_EQ(item.get_type(), network::IWorkItem::Type::CONNECT);
+    EXPECT_CALL(*io, submit(_)).WillOnce([this](iuring::IWorkItem& item) {
+        ASSERT_EQ(item.get_type(), iuring::IWorkItem::Type::CONNECT);
         seen_submit = true;
 
-        auto* k = dynamic_cast<network::WorkItem *>(&item);
+        auto* k = dynamic_cast<iuring::WorkItem *>(&item);
         ASSERT_NE(k, nullptr);
-        network::ConnectResult ret;
+        iuring::ConnectResult ret;
         ret.status = 12321;
-        ret.m_address = network::IPAddress(
-            network::IPAddress::string_to_ipv4_address("9.8.7.6", logger),
-            network::SocketPortID::ENCRYPTED_WEB_PORT
+        ret.m_address = iuring::IPAddress(
+            iuring::IPAddress::string_to_ipv4_address("9.8.7.6", logger),
+            iuring::SocketPortID::ENCRYPTED_WEB_PORT
         );
         k->call_connect_callback(ret);
     });
 
     auto item = wp.alloc_connect_work_item(
-        network::IPAddress(  network::IPAddress::string_to_ipv4_address("1.2.3.4", logger),
-                network::SocketPortID::ENCRYPTED_WEB_PORT ),
+        iuring::IPAddress(  iuring::IPAddress::string_to_ipv4_address("1.2.3.4", logger),
+                iuring::SocketPortID::ENCRYPTED_WEB_PORT ),
         socket, io,
-        [](const network::ConnectResult& result) {
+        [](const iuring::ConnectResult& result) {
             ASSERT_EQ(result.status, 12321);
             ASSERT_EQ(result.m_address.to_human_readable_ip_string(), "9.8.7.6");
         },

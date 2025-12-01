@@ -10,31 +10,30 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <Logger.hpp>
-#include <StringUtils.hpp>
-
-#include <IPAddress.hpp>
 #include <cassert>
 #include <cstring>
 #include <memory>
 
-#include <ISocket.hpp>
+#include <iuring/ILogger.hpp>
+#include <iuring/StringUtils.hpp>
+#include <iuring/IPAddress.hpp>
+#include <iuring/ISocket.hpp>
 
-namespace network
+namespace iuring
 {
 class AcceptResult;
 
 class SocketImpl : public ISocket
 {
 private:
-    SocketImpl(Logger& logger, const AcceptResult& new_conn);
+    SocketImpl(logging::ILogger& logger, const AcceptResult& new_conn);
 
     SocketImpl(
-        SocketType type, SocketPortID port, Logger& logger, SocketKind kind);
+        SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind);
 
 public:
-    static std::shared_ptr<SocketImpl> create(Logger& logger, const AcceptResult& new_conn);
-    static std::shared_ptr<SocketImpl> create(SocketType type, SocketPortID port, Logger& logger, SocketKind kind);
+    static std::shared_ptr<SocketImpl> create(logging::ILogger& logger, const AcceptResult& new_conn);
+    static std::shared_ptr<SocketImpl> create(SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind);
 
     void dump_info();
 
@@ -50,4 +49,4 @@ private:
     void local_bind(SocketPortID port_id);
 };
 
-} // namespace network
+} // namespace iuring

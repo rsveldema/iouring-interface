@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file IPAddress.hpp
+ * @brief Defines the IPAddress class for handling IPv4 and IPv6 addresses.
+ */
+
 
 #include <cassert>
 #include <cstring>
@@ -12,11 +17,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <Logger.hpp>
-#include <StringUtils.hpp>
-#include <NetworkProtocols.hpp>
+#include <iuring/ILogger.hpp>
+#include <iuring/StringUtils.hpp>
+#include <iuring/NetworkProtocols.hpp>
 
-namespace network
+namespace iuring
 {
 class IPAddress
 {
@@ -200,7 +205,7 @@ public:
 
 public:
     static in_addr string_to_ipv4_address(
-        const std::string& _ip_address, Logger& logger);
+        const std::string& _ip_address, logging::ILogger& logger);
 
 private:
     std::optional<sockaddr_in> m_in4;
@@ -208,4 +213,4 @@ private:
 };
 
 
-} // namespace network
+} // namespace iuring

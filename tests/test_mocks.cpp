@@ -6,6 +6,6 @@
 TEST(check_mocks, declare_tests) {
     printf("hello world\n");
 
-    network::mocks::WorkItem work_item;
-    network::mocks::IOUring mock_ring;
+    iuring::mocks::WorkItem work_item;
+    iuring::mocks::IOUring mock_ring;
 }

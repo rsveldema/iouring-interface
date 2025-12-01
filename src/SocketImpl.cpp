@@ -1,4 +1,3 @@
-#include <SocketImpl.hpp>
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -7,19 +6,19 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include <Logger.hpp>
+#include <iuring/ILogger.hpp>
+#include <iuring/SocketImpl.hpp>
+#include <iuring/WorkItem.hpp>
 
-#include <WorkItem.hpp>
-
-namespace network
+namespace iuring
 {
 std::shared_ptr<SocketImpl> SocketImpl::create(
-    Logger& logger, const AcceptResult& new_conn)
+    logging::ILogger& logger, const AcceptResult& new_conn)
 {
     class EnableShared : public SocketImpl
     {
     public:
-        EnableShared(Logger& logger, const AcceptResult& new_conn)
+        EnableShared(logging::ILogger& logger, const AcceptResult& new_conn)
             : SocketImpl(logger, new_conn)
         {
         }
@@ -28,13 +27,13 @@ std::shared_ptr<SocketImpl> SocketImpl::create(
 }
 
 std::shared_ptr<SocketImpl> SocketImpl::create(
-    SocketType type, SocketPortID port, Logger& logger, SocketKind kind)
+    SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind)
 {
     class EnableShared : public SocketImpl
     {
     public:
         EnableShared(
-            SocketType type, SocketPortID port, Logger& logger, SocketKind kind)
+            SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind)
             : SocketImpl(type, port, logger, kind)
         {
         }
@@ -43,8 +42,8 @@ std::shared_ptr<SocketImpl> SocketImpl::create(
 }
 
 
-SocketImpl::SocketImpl(Logger& logger, const AcceptResult& new_conn)
-    : ISocket(network::get_type(new_conn), network::get_port(new_conn), logger,
+SocketImpl::SocketImpl(logging::ILogger& logger, const AcceptResult& new_conn)
+    : ISocket(iuring::get_type(new_conn), iuring::get_port(new_conn), logger,
           SocketKind::SERVER_STREAM_SOCKET, new_conn.m_new_fd)
 {
     memset(&m_mreq, 0, sizeof(m_mreq));
@@ -54,7 +53,7 @@ SocketImpl::SocketImpl(Logger& logger, const AcceptResult& new_conn)
 
 namespace
 {
-    int create_socket(Logger& logger, SocketType type)
+    int create_socket(logging::ILogger& logger, SocketType type)
     {
         int non_blocking_option = 0;
         if (false)
@@ -95,7 +94,7 @@ namespace
 } // namespace
 
 SocketImpl::SocketImpl(
-    SocketType type, SocketPortID port, Logger& logger, SocketKind kind)
+    SocketType type, SocketPortID port, logging::ILogger& logger, SocketKind kind)
     : ISocket(type, port, logger, kind, create_socket(logger, type))
 {
     memset(&m_mreq, 0, sizeof(m_mreq));
@@ -255,7 +254,7 @@ void SocketImpl::local_bind(SocketPortID port_id)
     assert(get_fd() >= 0);
 
     const auto port_value =
-        static_cast<std::underlying_type_t<network::SocketPortID>>(port_id);
+        static_cast<std::underlying_type_t<iuring::SocketPortID>>(port_id);
 
     LOG_DEBUG(get_logger(), "PTP: binding interface to port %d\n", port_value);
     sockaddr_in addr;
@@ -275,4 +274,4 @@ void SocketImpl::local_bind(SocketPortID port_id)
 
     dump_info();
 }
-} // namespace network
+} // namespace iuring

@@ -1,6 +1,7 @@
-#include <IOUring.hpp>
-#include <SocketImpl.hpp>
-#include <TimeUtils.hpp>
+#include <iuring/IOUring.hpp>
+#include <iuring/SocketImpl.hpp>
+#include <iuring/TimeUtils.hpp>
+#include <iuring/Logger.hpp>
 
 using namespace std::chrono_literals;
 
@@ -14,24 +15,24 @@ static void Usage()
     printf("Usage: --ping <ip>\n");
 }
 
-void handle_packet_sent(const std::shared_ptr<network::IOUringInterface>& io,
-    const std::shared_ptr<network::ISocket>& socket)
+void handle_packet_sent(const std::shared_ptr<iuring::IOUringInterface>& io,
+    const std::shared_ptr<iuring::ISocket>& socket)
 {
-    io->submit_recv(socket, [io, socket](const network::ReceivedMessage& msg) {
+    io->submit_recv(socket, [io, socket](const iuring::ReceivedMessage& msg) {
         fprintf(stderr, "received: %s\n", msg.to_string().c_str());
 
-        io->submit_close(socket, [](const network::CloseResult& res) {
+        io->submit_close(socket, [](const iuring::CloseResult& res) {
             fprintf(stderr, "connection closed: %d\n", res.status);
             assert(res.status == 0);
             connection_has_been_closed = true;
         });
 
-        return network::ReceivePostAction::NONE;
+        return iuring::ReceivePostAction::NONE;
     });
 }
 
-void handle_new_connection(const std::shared_ptr<network::IOUringInterface>& io,
-    const std::shared_ptr<network::ISocket>& socket)
+void handle_new_connection(const std::shared_ptr<iuring::IOUringInterface>& io,
+    const std::shared_ptr<iuring::ISocket>& socket)
 {
     auto wi = io->submit_send(socket);
     auto& pkt = wi->get_send_packet();
@@ -41,29 +42,29 @@ void handle_new_connection(const std::shared_ptr<network::IOUringInterface>& io,
     pkt.append("Accept: application/json\r\n");
     pkt.append("\r\n");
 
-    wi->submit([io, socket](const network::SendResult& result) {
+    wi->submit([io, socket](const iuring::SendResult& result) {
         printf("packet sent successfully: %d\n", result.status);
         handle_packet_sent(io, socket);
     });
 }
 
-void do_http_ping(const network::IPAddress& ping_addr, Logger& logger,
+void do_http_ping(const iuring::IPAddress& ping_addr, logging::ILogger& logger,
     const std::string& interface_name, bool tune)
 {
-    auto port = network::SocketPortID::UNENCRYPTED_WEB_PORT;
+    auto port = iuring::SocketPortID::UNENCRYPTED_WEB_PORT;
 
     LOG_INFO(logger, "going to ping %s\n",
         ping_addr.to_human_readable_ip_string().c_str());
 
 
-    network::NetworkAdapter adapter(logger, interface_name, tune);
-    auto io = network::IOUring::create(logger, adapter);
+    iuring::NetworkAdapter adapter(logger, interface_name, tune);
+    auto io = iuring::IOUring::create(logger, adapter);
     io->init();
 
-    auto socket = network::SocketImpl::create(network::SocketType::IPV4_TCP,
-        port, logger, network::SocketKind::CLIENT_SOCKET);
+    auto socket = iuring::SocketImpl::create(iuring::SocketType::IPV4_TCP,
+        port, logger, iuring::SocketKind::CLIENT_SOCKET);
     io->submit_connect(
-        socket, ping_addr, [io, socket](const network::ConnectResult& res) {
+        socket, ping_addr, [io, socket](const iuring::ConnectResult& res) {
             assert(res.status == 0);
             handle_new_connection(io, socket);
         });
@@ -80,21 +81,21 @@ void do_http_ping(const network::IPAddress& ping_addr, Logger& logger,
 
 int main(int argc, char** argv)
 {
-    Logger logger(true, true, LogOutput::CONSOLE);
+    logging::Logger logger(true, true, logging::LogOutput::CONSOLE);
 
     const std::string interface_name = "eth0";
     bool tune = true;
 
-    std::optional<network::IPAddress> ping_addr_opt;
+    std::optional<iuring::IPAddress> ping_addr_opt;
     for (int i = 0; i < argc; i++)
     {
         std::string arg{ argv[i] };
         if (arg == "--ping")
         {
             auto in_addr =
-                network::IPAddress::string_to_ipv4_address(argv[i + 1], logger);
-            network::IPAddress addr(
-                in_addr, network::SocketPortID::ENCRYPTED_WEB_PORT);
+                iuring::IPAddress::string_to_ipv4_address(argv[i + 1], logger);
+            iuring::IPAddress addr(
+                in_addr, iuring::SocketPortID::ENCRYPTED_WEB_PORT);
             ping_addr_opt = addr;
         }
         else if (arg == "--no-tune")

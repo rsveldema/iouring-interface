@@ -1,10 +1,11 @@
 #pragma once
 
-#include <IPAddress.hpp>
 #include <cstdint>
 #include <string>
 
-namespace network
+#include <iuring/IPAddress.hpp>
+
+namespace iuring
 {
 class ReceivedMessage
 {
@@ -49,4 +50,4 @@ private:
 };
 
 
-} // namespace network
+} // namespace iuring

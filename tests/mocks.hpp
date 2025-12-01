@@ -3,16 +3,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <IOUringInterface.hpp>
+#include <iuring/IOUringInterface.hpp>
 
-namespace network
+namespace iuring
 {
 namespace mocks
 {
     class Socket : public ISocket
     {
     public:
-        Socket(SocketType type, SocketPortID port, Logger& logger,
+        Socket(SocketType type, SocketPortID port, logging::ILogger& logger,
             SocketKind kind, int fd)
             : ISocket(type, port, logger, kind, fd)
         {
@@ -59,4 +59,4 @@ namespace mocks
             (override));
     };
 } // namespace mocks
-} // namespace network
+} // namespace iuring

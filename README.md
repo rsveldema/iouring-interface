@@ -2,7 +2,7 @@
 iuring
 ===========================
 
-A C++ abstraction to liburing for fast async network-IO.
+A C++ abstraction to liburing for simplified async network-IO.
 
 My goals:
 - don't impact performance much

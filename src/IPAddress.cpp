@@ -1,17 +1,16 @@
 #include <cassert>
 #include <cerrno>
 #include <cstring>
+#include <array>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include <Logger.hpp>
-#include <array>
+#include <iuring/ILogger.hpp>
+#include <iuring/IPAddress.hpp>
 
-#include <IPAddress.hpp>
-
-namespace network
+namespace iuring
 {
 std::string IPAddress::to_human_readable_ip_string() const
 {
@@ -73,19 +72,19 @@ std::string IPAddress::to_human_readable_string() const
 }
 
 IPAddress create_sock_addr_in(
-    const char* addr, const in_port_t port, Logger& logger)
+    const char* addr, const in_port_t port, logging::ILogger& logger)
 {
     sockaddr_in dest_addr;
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.sin_addr =
-        network::IPAddress::string_to_ipv4_address(addr, logger);
+        iuring::IPAddress::string_to_ipv4_address(addr, logger);
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(port);
     return IPAddress(dest_addr);
 }
 
 in_addr IPAddress::string_to_ipv4_address(
-    const std::string& _ip_address, Logger& logger)
+    const std::string& _ip_address, logging::ILogger& logger)
 {
     in_addr addr;
 
@@ -108,4 +107,4 @@ in_addr IPAddress::string_to_ipv4_address(
     }
     return addr;
 }
-} // namespace network
+} // namespace iuring
