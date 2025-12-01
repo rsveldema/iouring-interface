@@ -63,7 +63,7 @@ void do_http_ping(const iuring::IPAddress& ping_addr, logging::ILogger& logger,
     io->init();
 
     auto socket = iuring::ISocket::create_impl(iuring::SocketType::IPV4_TCP,
-        port, logger, iuring::SocketKind::CLIENT_SOCKET);
+        port, logger, iuring::SocketKind::UNICAST_CLIENT_SOCKET);
     io->submit_connect(
         socket, ping_addr, [io, socket](const iuring::ConnectResult& res) {
             assert(res.status == 0);

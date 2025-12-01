@@ -19,7 +19,7 @@ public:
     std::shared_ptr<iuring::mocks::Socket> socket =
         std::make_shared<iuring::mocks::Socket>(iuring::SocketType::IPV4_TCP,
             iuring::SocketPortID::LOCAL_WEB_PORT, logger,
-            iuring::SocketKind::CLIENT_SOCKET, 42);
+            iuring::SocketKind::UNICAST_CLIENT_SOCKET, 42);
 
     std::shared_ptr<iuring::mocks::IOUring> io =
         std::make_shared<iuring::mocks::IOUring>();

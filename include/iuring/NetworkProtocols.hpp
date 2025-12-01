@@ -12,7 +12,7 @@ enum class SocketKind
 {
     MULTICAST_PACKET_SOCKET,
     SERVER_STREAM_SOCKET,
-    CLIENT_SOCKET
+    UNICAST_CLIENT_SOCKET
 };
 
 enum class SocketType

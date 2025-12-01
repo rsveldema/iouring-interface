@@ -122,7 +122,7 @@ SocketImpl::SocketImpl(SocketType type, SocketPortID port,
 
     switch (kind)
     {
-    case SocketKind::CLIENT_SOCKET: {
+    case SocketKind::UNICAST_CLIENT_SOCKET: {
         local_bind(static_cast<SocketPortID>(9090));
 
         int val = 1;
