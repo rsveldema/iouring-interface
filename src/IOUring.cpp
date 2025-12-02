@@ -206,7 +206,7 @@ void IOUring::submit_all_requests()
     }
     else
     {
-        fprintf(stderr, "%d jobs submitted\n", ret);
+        //fprintf(stderr, "%d jobs submitted\n", ret);
     }
 }
 
@@ -269,7 +269,7 @@ void IOUring::submit(IWorkItem& _item)
         assert(item.m_connect_sock_len == sizeof(*sa));
 
         fprintf(
-            stderr, "prep-connect: %d (port %d)\n", fd, htons(sa->sin_port));
+            stderr, "prep-connect: fd=%d (port %d)\n", fd, htons(sa->sin_port));
 
         io_uring_prep_connect(sqe, fd,
             (struct sockaddr*) &item.m_buffer_for_uring,
@@ -741,7 +741,7 @@ Error IOUring::poll_completion_queues()
     switch (success)
     {
     case 0:
-        fprintf(stderr, "peek successful!\n");
+        //fprintf(stderr, "peek successful!\n");
 
         call_callback_and_free_work_item_id(cqe);
         io_uring_cq_advance(&m_ring, 1);
