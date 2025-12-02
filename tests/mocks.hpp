@@ -28,7 +28,9 @@ namespace mocks
     {
     public:
         MOCK_METHOD(SendPacket&, get_send_packet, (), (override));
-        MOCK_METHOD(void, submit, (const send_callback_func_t& cb), (override));
+        MOCK_METHOD(void, submit_packet, (const DatagramSendParameters& params, const send_callback_func_t& cb), (override));
+        MOCK_METHOD(void, submit_stream_data, (const send_callback_func_t& cb), (override));
+        MOCK_METHOD(std::shared_ptr<ISocket>, get_socket, (), (const, override));
     };
 
     class IOUring : public IOUringInterface

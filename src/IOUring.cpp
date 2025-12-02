@@ -28,7 +28,8 @@ std::shared_ptr<IOUring> IOUring::create(
     class EnableShared : public IOUring
     {
     public:
-        EnableShared(logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
+        EnableShared(logging::ILogger& logger, NetworkAdapter& adapter,
+            size_t queue_size)
             : IOUring(logger, adapter, queue_size)
         {
         }
@@ -38,7 +39,8 @@ std::shared_ptr<IOUring> IOUring::create(
 }
 
 
-IOUring::IOUring(logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
+IOUring::IOUring(
+    logging::ILogger& logger, NetworkAdapter& adapter, size_t queue_size)
     : m_logger(logger)
     , m_queue_size(queue_size)
     , m_adapter(adapter)
@@ -316,27 +318,34 @@ void IOUring::submit(IWorkItem& _item)
         break;
     }
 
-    case WorkItem::Type::SEND: {
+    case WorkItem::Type::SEND_STREAM_DATA: {
         const auto fd = item.get_socket()->get_fd();
 
-        if (item.is_stream())
-        {
-            int flags = 0;
-            const auto& sp = item.get_raw_send_packet();
+        assert(item.is_stream());
+        int flags = 0;
+        const auto& sp = item.get_raw_send_packet();
 
-            LOG_INFO(
-                get_logger(), "sending %ld bytes (%s)", sp.size(), sp.data());
-            io_uring_prep_send(sqe, fd, sp.data(), sp.size(), flags);
-        }
-        else
-        {
-            int flags = 0;
-            LOG_DEBUG(get_logger(), "SEND ---- submit: %d", fd);
-            io_uring_prep_sendmsg(sqe, fd, &item.m_msg, flags);
+        LOG_INFO(get_logger(), "sending %ld bytes (%s)", sp.size(), sp.data());
+        io_uring_prep_send(sqe, fd, sp.data(), sp.size(), flags);
 
-            // sqe->flags |= IOSQE_FIXED_FILE;
-            // sqe->flags |= IOSQE_BUFFER_SELECT;
+        if (item.next_request_should_wait_for_this_request())
+        {
+            sqe->flags |= IOSQE_IO_LINK;
         }
+        break;
+    }
+
+    case WorkItem::Type::SEND_WORKPACKET: {
+        const auto fd = item.get_socket()->get_fd();
+
+        assert(!item.is_stream());
+        int flags = 0;
+        LOG_DEBUG(get_logger(), "SEND ---- submit: %d", fd);
+        item.init_send_msg();
+        io_uring_prep_sendmsg(sqe, fd, &item.m_msg, flags);
+
+        // sqe->flags |= IOSQE_FIXED_FILE;
+        // sqe->flags |= IOSQE_BUFFER_SELECT;
 
         if (item.next_request_should_wait_for_this_request())
         {
@@ -348,6 +357,73 @@ void IOUring::submit(IWorkItem& _item)
 
     submit_all_requests();
 }
+
+
+void WorkItem::init_send_msg()
+{
+    assert(m_work_type == WorkItem::Type::SEND_WORKPACKET);
+
+    m_msg.msg_iov = m_msg_iov->data();
+    m_msg.msg_iovlen = m_msg_iov->size();
+    assert(m_msg.msg_iovlen == 1);
+
+    m_msg.msg_iov[0].iov_base = (void*) m_send_packet.data();
+    m_msg.msg_iov[0].iov_len = m_send_packet.size();
+
+    {
+        const uint8_t congestion_notification = 0;
+        const uint8_t tos = static_cast<std::underlying_type_t<dscp_t>>(m_params.dscp)
+                << 2 |
+            congestion_notification;
+        const int32_t ttl =
+            static_cast<std::underlying_type_t<timetolive_t>>(m_params.ttl);
+        assert(ttl > 0 && ttl < 256);
+
+        m_control.fill(0);
+
+        m_msg.msg_control = m_control.data();
+        m_msg.msg_controllen =
+            CMSG_SPACE(sizeof(tos)) + CMSG_SPACE(sizeof(ttl));
+        assert(m_msg.msg_controllen < m_control.size());
+
+        auto* cmsgptr = CMSG_FIRSTHDR(&m_msg);
+        assert(cmsgptr);
+        cmsgptr->cmsg_level = IPPROTO_IP;
+        cmsgptr->cmsg_type = IP_TOS;
+        cmsgptr->cmsg_len = CMSG_LEN(sizeof(tos));
+        memcpy(CMSG_DATA(cmsgptr), &tos, sizeof(tos));
+
+
+        cmsgptr = CMSG_NXTHDR(&m_msg, cmsgptr);
+        assert(cmsgptr);
+        cmsgptr->cmsg_level = IPPROTO_IP;
+        cmsgptr->cmsg_type = IP_TTL;
+        cmsgptr->cmsg_len = CMSG_LEN(sizeof(ttl));
+        memcpy(CMSG_DATA(cmsgptr), &ttl, sizeof(ttl));
+    }
+
+    m_msg.msg_flags = 0;
+
+    m_sa = m_params.destination_address;
+
+    if (const auto* a = m_sa.get_ipv4())
+    {
+        m_msg.msg_name = (void*) a;
+        m_msg.msg_namelen = sizeof(*a);
+    }
+    else if (const auto* a = m_sa.get_ipv6())
+    {
+        m_msg.msg_name = (void*) a;
+        m_msg.msg_namelen = sizeof(*a);
+    }
+    else
+    {
+        abort();
+    }
+    // LOG_DEBUG(get_logger(), "submitting send: %ld bytes\n", size);
+}
+
+
 
 void IOUring::call_close_callback(
     std::shared_ptr<WorkItem> work_item, io_uring_cqe* cqe)
@@ -626,7 +702,8 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         get_pool().free_work_item(id);
         break;
 
-    case WorkItem::Type::SEND:
+    case WorkItem::Type::SEND_STREAM_DATA:
+    case WorkItem::Type::SEND_WORKPACKET:
         call_send_callback(work_item, cqe);
         get_pool().free_work_item(id);
         break;

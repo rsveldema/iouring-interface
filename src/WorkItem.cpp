@@ -13,8 +13,10 @@ const char* WorkItem::type_to_string(Type t)
         return "connect";
     case Type::RECV:
         return "recv";
-    case Type::SEND:
-        return "send";
+    case Type::SEND_STREAM_DATA:
+        return "send_stream_data";
+    case Type::SEND_WORKPACKET:
+        return "send_workpacket";
     case Type::UNKNOWN:
         return "unknown";
     case Type::CLOSE:
@@ -31,10 +33,19 @@ void WorkItem::submit(const recv_callback_func_t& cb)
     m_io_ring->submit(*this);
 }
 
-void WorkItem::submit(const send_callback_func_t& cb)
+void WorkItem::submit_packet(const DatagramSendParameters& params,
+    const send_callback_func_t& cb)
+{
+    m_params = params;
+    m_callback = cb;
+    m_work_type = Type::SEND_WORKPACKET;
+    m_io_ring->submit(*this);
+}
+
+void WorkItem::submit_stream_data(const send_callback_func_t& cb)
 {
     m_callback = cb;
-    m_work_type = Type::SEND;
+    m_work_type = Type::SEND_STREAM_DATA;
     m_io_ring->submit(*this);
 }
 

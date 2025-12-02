@@ -19,11 +19,11 @@
 #include <sys/types.h>
 
 #include <iuring/ISocket.hpp>
+#include <iuring/IWorkItem.hpp>
 #include <iuring/NetworkProtocols.hpp>
 #include <iuring/ReceivedMessage.hpp>
 #include <iuring/SendPacket.hpp>
 #include <iuring/UringDefs.hpp>
-#include <iuring/IWorkItem.hpp>
 
 namespace iuring
 {
@@ -36,8 +36,9 @@ class IOUringInterface;
 class WorkItem : public IWorkItem
 {
 public:
-    WorkItem(logging::ILogger& logger, const std::shared_ptr<IOUringInterface>& network,
-        work_item_id_t id, const char* descr, const std::shared_ptr<ISocket>& s)
+    WorkItem(logging::ILogger& logger,
+        const std::shared_ptr<IOUringInterface>& network, work_item_id_t id,
+        const char* descr, const std::shared_ptr<ISocket>& s)
         : m_logger(logger)
         , m_io_ring(network)
         , m_id(id)
@@ -78,7 +79,10 @@ public:
     /** submit a connect request */
     void submit(const IPAddress& target, const connect_callback_func_t& cb);
     /** submit a send request */
-    void submit(const send_callback_func_t& cb) override;
+    void submit_stream_data(const send_callback_func_t& cb) override;
+    /** submit a send request */
+    void submit_packet(const DatagramSendParameters& params,
+        const send_callback_func_t& cb) override;
     /** submit a recv request */
     void submit(const recv_callback_func_t& cb);
     /** submit a accept request */
@@ -91,7 +95,7 @@ public:
         m_send_packet.reset();
     }
 
-    std::shared_ptr<ISocket> get_socket() const
+    std::shared_ptr<ISocket> get_socket() const override
     {
         return m_socket;
     }
@@ -101,21 +105,11 @@ public:
         return m_id;
     }
 
-    const msghdr& get_msg() const
-    {
-        return m_msg;
-    }
-
-    IPAddress get_sock_addr() const
-    {
-        return m_sa;
-    }
-
     void call_send_callback(int status)
     {
         assert(std::holds_alternative<send_callback_func_t>(m_callback));
         auto call = std::get<send_callback_func_t>(m_callback);
-        SendResult result { status };
+        SendResult result{ status };
         call(result);
         m_send_packet.reset();
     }
@@ -125,7 +119,7 @@ public:
         assert(std::holds_alternative<close_callback_func_t>(m_callback));
         auto call = std::get<close_callback_func_t>(m_callback);
 
-        CloseResult result { status };
+        CloseResult result{ status };
         call(result);
     }
 
@@ -151,9 +145,6 @@ public:
         call(new_conn);
     }
 
-
-    void init_send_msg(
-        const IPAddress& sock_addr, dscp_t dscp, timetolive_t ttl);
 
     SendPacket& get_send_packet() override
     {
@@ -189,6 +180,7 @@ private:
     };
 
     logging::ILogger& m_logger;
+    DatagramSendParameters m_params;
 
     State m_state = State::IN_USE;
 
@@ -227,6 +219,7 @@ private:
 
     ReceivePostAction do_stream_socket_receive();
     ReceivePostAction do_packet_socket_receive();
+    void init_send_msg();
 
     friend class IOUring;
 };

@@ -31,6 +31,8 @@ struct CloseResult
     int status;
 };
 
+class ReceivedMessage;
+
 using recv_callback_func_t =
     std::function<ReceivePostAction(const ReceivedMessage& msg)>;
 

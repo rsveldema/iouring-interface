@@ -43,7 +43,7 @@ void handle_new_connection(const std::shared_ptr<iuring::IOUringInterface>& io,
     pkt.append("Accept: application/json\r\n");
     pkt.append("\r\n");
 
-    wi->submit([io, socket](const iuring::SendResult& result) {
+    wi->submit_stream_data([io, socket](const iuring::SendResult& result) {
         printf("packet sent successfully: %d\n", result.status);
         handle_packet_sent(io, socket);
     });
