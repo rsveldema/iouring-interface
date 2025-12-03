@@ -49,6 +49,13 @@ std::string to_mdns_string(const std::vector<std::string>& list);
 /** creates a string: [elt1, elt2, ...] */
 std::string to_string(const std::vector<std::string>& list);
 
+[[maybe_unused]]
+static inline
+const char* to_string(bool v) {
+    return v ? "true" : "false";
+}
+
+
 std::vector<std::string> split(const std::string_view& s, const char sep);
 
 bool ends_with(const std::string_view& s, const std::string_view& end);
