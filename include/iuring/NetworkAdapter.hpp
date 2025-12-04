@@ -3,7 +3,8 @@
 #include <string>
 #include <optional>
 
-#include "ILogger.hpp"
+#include <slogger/ILogger.hpp>
+
 #include "MacAddress.hpp"
 
 namespace iuring

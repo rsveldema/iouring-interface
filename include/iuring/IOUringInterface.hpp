@@ -7,7 +7,8 @@
 
 #include <memory>
 
-#include "ILogger.hpp"
+#include <slogger/ILogger.hpp>
+
 #include "MacAddress.hpp"
 #include "IPAddress.hpp"
 #include "ISocket.hpp"

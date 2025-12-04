@@ -22,9 +22,10 @@
 #include <cassert>
 #include <cstring>
 
-#include <iuring/ILogger.hpp>
+#include <slogger/ILogger.hpp>
+#include <slogger/StringUtils.hpp>
+
 #include <iuring/IPAddress.hpp>
-#include <iuring/StringUtils.hpp>
 
 
 namespace iuring

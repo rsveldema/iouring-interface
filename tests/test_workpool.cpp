@@ -3,7 +3,8 @@
 #include "mocks.hpp"
 
 #include "../src/WorkPool.hpp"
-#include <iuring/Logger.hpp>
+
+#include <slogger/Logger.hpp>
 
 using testing::_;
 

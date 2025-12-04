@@ -17,8 +17,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <iuring/ILogger.hpp>
-#include <iuring/StringUtils.hpp>
+#include <slogger/ILogger.hpp>
+#include <slogger/StringUtils.hpp>
+
 #include <iuring/NetworkProtocols.hpp>
 
 namespace iuring

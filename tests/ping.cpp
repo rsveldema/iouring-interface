@@ -1,8 +1,9 @@
 #include <iuring/IOUringInterface.hpp>
 #include <iuring/NetworkAdapter.hpp>
 #include <iuring/ISocket.hpp>
-#include <iuring/TimeUtils.hpp>
-#include <iuring/Logger.hpp>
+
+#include <slogger/TimeUtils.hpp>
+#include <slogger/Logger.hpp>
 
 using namespace std::chrono_literals;
 

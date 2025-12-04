@@ -23,7 +23,8 @@
 #include <string>
 #include <vector>
 
-#include <iuring/ILogger.hpp>
+#include <slogger/ILogger.hpp>
+
 #include <iuring/UringDefs.hpp>
 #include "WorkItem.hpp"
 

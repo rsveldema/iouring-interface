@@ -14,8 +14,9 @@
 #include <cstring>
 #include <memory>
 
-#include <iuring/ILogger.hpp>
-#include <iuring/StringUtils.hpp>
+#include <slogger/ILogger.hpp>
+#include <slogger/StringUtils.hpp>
+
 #include <iuring/IPAddress.hpp>
 #include <iuring/ISocket.hpp>
 
