@@ -124,17 +124,16 @@ std::optional<MacAddress> NetworkAdapter::get_my_mac_address()
         return *mac_opt;
     }
 
-    std::array<char, 128> buffer;
-    buffer.fill(0);
-    snprintf(buffer.data(), buffer.size(), "/sys/class/net/{}/address",
-        get_interface_name().c_str());
-    FILE* f = fopen(buffer.data(), "r");
+    auto filename = "/sys/class/net/" + get_interface_name() + "/address";
+    FILE* f = fopen(filename.c_str(), "r");
     if (!f)
     {
-        fprintf(stderr, "failed to open {}\n", buffer.data());
+        LOG_ERROR(get_logger(), "failed to open {}", filename);
         abort();
         return std::nullopt;
     }
+
+    std::array<char, 128> buffer;
     buffer.fill(0);
 
     int num_bytes_read = 0;

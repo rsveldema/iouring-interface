@@ -22,7 +22,7 @@ std::shared_ptr<ISocket> ISocket::create_impl(
 
 
 std::shared_ptr<ISocket> ISocket::create_impl(SocketType type,
-        SocketPortID port, logging::ILogger& logger, SocketKind kind)
+    SocketPortID port, logging::ILogger& logger, SocketKind kind)
 {
     return SocketImpl::create(type, port, logger, kind);
 }
@@ -162,7 +162,7 @@ SocketImpl::SocketImpl(SocketType type, SocketPortID port,
             get_fd(), (struct sockaddr*) &server_addr, sizeof(server_addr));
         if (err < 0)
         {
-            fprintf(stderr, "bind error: {} (port {})\n", strerror(errno),
+            LOG_ERROR(get_logger(), "bind error: {} (port {})", strerror(errno),
                 tmp_port);
             abort();
         }
@@ -170,7 +170,7 @@ SocketImpl::SocketImpl(SocketType type, SocketPortID port,
         err = ::listen(get_fd(), 1024);
         if (err < 0)
         {
-            fprintf(stderr, "listen error: {}, port {}\n", strerror(errno),
+            LOG_INFO(get_logger(), "listen error: {}, port {}", strerror(errno),
                 tmp_port);
             abort();
         }
@@ -254,7 +254,7 @@ void SocketImpl::join_multicast_group(
 void SocketImpl::leave_multicast_group()
 {
     assert(get_fd() >= 0);
-    LOG_DEBUG(get_logger(), "PTP: leave_multicast_group\n");
+    LOG_DEBUG(get_logger(), "PTP: leave_multicast_group");
     if (int ret = setsockopt(
             get_fd(), IPPROTO_IP, IP_DROP_MEMBERSHIP, &m_mreq, sizeof(m_mreq));
         ret < 0)
@@ -268,22 +268,20 @@ void SocketImpl::local_bind(SocketPortID port_id)
 {
     assert(get_fd() >= 0);
 
-    const auto port_value =
-        static_cast<std::underlying_type_t<iuring::SocketPortID>>(port_id);
 
-    LOG_DEBUG(get_logger(), "PTP: binding interface to port {}\n", port_value);
+    LOG_DEBUG(get_logger(), "PTP: binding interface to port {}\n", port_id);
     sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
 
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(port_value);
+    addr.sin_port = htons(
+        static_cast<std::underlying_type_t<iuring::SocketPortID>>(port_id));
 
     if (int ret = ::bind(get_fd(), (sockaddr*) &addr, sizeof(addr)); ret < 0)
     {
         perror("bind");
-        LOG_ERROR(
-            get_logger(), "failed to bind to port {}, exiting", port_value);
+        LOG_ERROR(get_logger(), "failed to bind to port {}, exiting", port_id);
         exit(1);
     }
 

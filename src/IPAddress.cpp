@@ -72,14 +72,14 @@ std::string IPAddress::to_human_readable_string() const
 }
 
 IPAddress create_sock_addr_in(
-    const char* addr, const in_port_t port, logging::ILogger& logger)
+    const char* addr, const SocketPortID port, logging::ILogger& logger)
 {
     sockaddr_in dest_addr;
     memset(&dest_addr, 0, sizeof(dest_addr));
     dest_addr.sin_addr =
         iuring::IPAddress::string_to_ipv4_address(addr, logger);
     dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(port);
+    dest_addr.sin_port = htons(static_cast<std::underlying_type_t<SocketPortID>>(port));
     return IPAddress(dest_addr);
 }
 

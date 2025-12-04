@@ -217,6 +217,6 @@ private:
  * port to an IPAddress object
  */
 IPAddress create_sock_addr_in(
-    const char* addr, const in_port_t port, logging::ILogger& logger);
+    const char* addr, const SocketPortID port, logging::ILogger& logger);
     
 } // namespace iuring

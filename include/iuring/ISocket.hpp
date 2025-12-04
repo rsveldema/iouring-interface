@@ -91,14 +91,6 @@ public:
         return m_type;
     }
 
-    in_port_t get_port_as_int() const
-    {
-        const auto port_value =
-            static_cast<std::underlying_type_t<iuring::SocketPortID>>(
-                get_port());
-        return port_value;
-    }
-
     logging::ILogger& get_logger()
     {
         return m_logger;

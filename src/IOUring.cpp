@@ -202,7 +202,7 @@ void IOUring::submit_all_requests()
     const auto ret = io_uring_submit(&m_ring);
     if (ret < 0)
     {
-        fprintf(stderr, "failed to submit sqe: {}\n", strerror(-ret));
+        LOG_ERROR(get_logger(), "failed to submit sqe: {}", strerror(-ret));
     }
     else
     {
@@ -268,8 +268,8 @@ void IOUring::submit(IWorkItem& _item)
 
         assert(item.m_connect_sock_len == sizeof(*sa));
 
-        fprintf(
-            stderr, "prep-connect: fd={} (port {})\n", fd, htons(sa->sin_port));
+        LOG_INFO(get_logger(),
+            "prep-connect: fd={} (port {})", fd, htons(sa->sin_port));
 
         io_uring_prep_connect(sqe, fd,
             (struct sockaddr*) &item.m_buffer_for_uring,
@@ -285,7 +285,7 @@ void IOUring::submit(IWorkItem& _item)
         if (item.is_stream())
         {
             int flags = 0;
-            fprintf(stderr, " register rcv: {}\n", item.get_socket()->get_fd());
+            LOG_INFO(get_logger(), " register rcv: {}", item.get_socket()->get_fd());
             io_uring_prep_recv(sqe, item.get_socket()->get_fd(),
                 nullptr, // buffer selected automatically from buffer queue
                 buffer_size(), flags);
@@ -476,7 +476,7 @@ void IOUring::call_connect_callback(
         work_item->m_buffer_for_uring, work_item->m_connect_sock_len);
     const ConnectResult new_conn{ .status = status, .m_address = addr };
 
-    fprintf(stderr, "CONN- XQE - res = {}\n", status);
+    LOG_INFO(get_logger(), "CONN- XQE - res = {}", status);
 
     work_item->call_connect_callback(new_conn);
 }
@@ -500,7 +500,7 @@ void IOUring::call_accept_callback(
 
     const int fd = cqe->res;
 
-    fprintf(stderr, " XQE - res = {}\n", fd);
+    LOG_INFO(get_logger(), " XQE - res = {}", fd);
 
     const iuring::IPAddress addr(
         work_item->m_buffer_for_uring, work_item->m_accept_sock_len);
@@ -578,7 +578,7 @@ ReceivePostAction IOUring::call_recv_handler_datagram(const uint8_t* buffer,
     }
 
     default: {
-        fprintf(stderr, "namelen = {}\n", recv_msg_out->namelen);
+        LOG_ERROR(get_logger(), "namelen = {}", recv_msg_out->namelen);
         abort();
     }
     }

@@ -98,6 +98,19 @@ enum class dscp_t : uint8_t
     RAV_DANTE_PTP_GENERAL = BEST_EFFORT,
     RAV_DANTE_RTP = EXPEDITED_FORWARDING
 };
-
-
 } // namespace iuring
+
+
+
+
+template <>
+struct std::formatter<iuring::SocketPortID> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    
+    auto format(iuring::SocketPortID c, std::format_context& ctx) const {
+        return std::format_to(ctx.out(), "{}", static_cast<uint16_t>(c));
+    }
+};
+

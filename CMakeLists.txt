@@ -16,7 +16,7 @@ file(GLOB_RECURSE INCLUDE_FILES "include/*.hpp")
 
 add_library(iuring)
 
-target_compile_features(iuring PUBLIC cxx_std_20) #
+target_compile_features(iuring PUBLIC cxx_std_23)
 target_link_libraries(iuring -luring ${UUID_LIBRARIES})
 target_include_directories(iuring PUBLIC ${PUBLIC_INCLUDE_DIRECTORIES})
 target_include_directories(iuring PRIVATE ${PRIVATE_INCLUDE_DIRECTORIES})
