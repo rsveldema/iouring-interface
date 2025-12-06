@@ -99,41 +99,44 @@ public:
         return false;
     }
 
+    /** IP address and port */
     std::string to_human_readable_string() const;
+
+    /** just the IP address is returned */
     std::string to_human_readable_ip_string() const;
 
     const void* data_sockaddr() const
     {
-        if (auto* a = get_ipv4())
+        if (const auto* a = get_ipv4())
             return a;
-        if (auto* b = get_ipv6())
+        if (const auto* b = get_ipv6())
             return b;
         abort();
     }
 
     socklen_t size_sockaddr() const
     {
-        if (auto* a = get_ipv4())
+        if (const auto* a = get_ipv4())
             return sizeof(*a);
-        if (auto* b = get_ipv6())
+        if (const auto* b = get_ipv6())
             return sizeof(*b);
         abort();
     }
 
     const void* data_addr() const
     {
-        if (auto* a = get_ipv4())
+        if (const auto* a = get_ipv4())
             return &a->sin_addr.s_addr;
-        if (auto* b = get_ipv6())
+        if (const auto* b = get_ipv6())
             return &b->sin6_addr;
         abort();
     }
 
     size_t size_addr() const
     {
-        if (auto* a = get_ipv4())
+        if (const auto* a = get_ipv4())
             return sizeof(a->sin_addr);
-        if (auto* b = get_ipv6())
+        if (const auto* b = get_ipv6())
             return sizeof(b->sin6_addr);
         abort();
     }
@@ -198,6 +201,29 @@ public:
         abort();
     }
 
+    bool operator == (const IPAddress& other) const
+    {
+        if (m_in4.has_value() and other.m_in4.has_value())
+        {
+            const auto& v1 = m_in4.value();
+            const auto& v2 = other.m_in4.value();
+            return
+                v1.sin_port == v2.sin_port &&
+                memcmp(&v1.sin_addr, &v2.sin_addr, sizeof(v1.sin_addr)) == 0 &&
+                v1.sin_family == v2.sin_family;
+        }
+        if (m_in6.has_value() and other.m_in6.has_value())
+        {
+            const auto& v1 = m_in6.value();
+            const auto& v2 = other.m_in6.value();
+            return
+                v1.sin6_port == v2.sin6_port &&
+                memcmp(&v1.sin6_addr, &v2.sin6_addr, sizeof(v1.sin6_addr)) == 0 &&
+                v1.sin6_family == v2.sin6_family;
+        }
+        return false;
+    }
+
 
     bool operator<(const IPAddress& addr) const
     {
@@ -219,5 +245,20 @@ private:
  */
 IPAddress create_sock_addr_in(
     const char* addr, const SocketPortID port, logging::ILogger& logger);
-    
+
 } // namespace iuring
+
+
+
+
+template <>
+struct std::formatter<iuring::IPAddress> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    auto format(const iuring::IPAddress& c, std::format_context& ctx) const {
+        return std::format_to(ctx.out(), "{}", c.to_human_readable_string());
+    }
+};
+
