@@ -684,11 +684,13 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
     {
     case WorkItem::Type::ACCEPT:
         call_accept_callback(work_item, cqe);
+        // try accept again:
         submit(*work_item);
         break;
 
     case WorkItem::Type::CLOSE:
         call_close_callback(work_item, cqe);
+        get_pool().free_work_item(id);
         break;
 
     case WorkItem::Type::RECV: {
@@ -696,6 +698,7 @@ void IOUring::call_callback_and_free_work_item_id(io_uring_cqe* cqe)
         switch (ret)
         {
         case ReceivePostAction::NONE:
+            get_pool().free_work_item(id);
             break;
         case ReceivePostAction::RE_SUBMIT:
             submit(*work_item);

@@ -1,7 +1,7 @@
+#include <array>
 #include <cassert>
 #include <cerrno>
 #include <cstring>
-#include <array>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -10,9 +10,28 @@
 #include <slogger/ILogger.hpp>
 
 #include <iuring/IPAddress.hpp>
+#include <iuring/MacAddress.hpp>
 
 namespace iuring
 {
+MacAddress::MacAddress(const std::string& mac)
+{
+    std::sscanf(mac.c_str(), "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+        &bytes[0], &bytes[1], &bytes[2], &bytes[3], &bytes[4], &bytes[5]);
+}
+
+const std::string MacAddress::to_string(const char sep) const
+{
+    return std::format("{:02x}{}{:02x}{}{:02x}{}{:02x}{}{:02x}{}{:02x}",
+        bytes[0], sep, // layout fix
+        bytes[1], sep, // layout fix
+        bytes[2], sep, // layout fix
+        bytes[3], sep, // layout fix
+        bytes[4], sep, // layout fix
+        bytes[5]); //
+}
+
+
 std::string IPAddress::to_human_readable_ip_string() const
 {
     std::array<char, 128> buffer;
@@ -80,7 +99,8 @@ IPAddress create_sock_addr_in(
     dest_addr.sin_addr =
         iuring::IPAddress::string_to_ipv4_address(addr, logger);
     dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(static_cast<std::underlying_type_t<SocketPortID>>(port));
+    dest_addr.sin_port =
+        htons(static_cast<std::underlying_type_t<SocketPortID>>(port));
     return IPAddress(dest_addr);
 }
 
