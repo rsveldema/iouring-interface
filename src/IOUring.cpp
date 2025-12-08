@@ -16,6 +16,11 @@
 
 namespace iuring
 {
+namespace
+{
+    // global instance to help with signal handler callback
+    std::shared_ptr<IOUring> s_self;
+} // namespace
 
 std::shared_ptr<IOUringInterface> IOUringInterface::create_impl(
     logging::ILogger& logger, NetworkAdapter& adapter)
@@ -256,7 +261,7 @@ void IOUring::submit(IWorkItem& _item)
         int flags = 0;
         // flags |= IOSQE_BUFFER_SELECT;
 
-        LOG_INFO(
+        LOG_DEBUG(
             get_logger(), "accept on socket {}", item.get_socket()->get_fd());
 
         item.m_accept_sock_len = 0;
@@ -274,7 +279,7 @@ void IOUring::submit(IWorkItem& _item)
 
         assert(item.m_connect_sock_len == sizeof(*sa));
 
-        LOG_INFO(get_logger(), "prep-connect: fd={} (port {})", fd,
+        LOG_DEBUG(get_logger(), "prep-connect: fd={} (port {})", fd,
             htons(sa->sin_port));
 
         io_uring_prep_connect(sqe, fd,
@@ -291,7 +296,7 @@ void IOUring::submit(IWorkItem& _item)
         if (item.is_stream())
         {
             int flags = 0;
-            LOG_INFO(
+            LOG_DEBUG(
                 get_logger(), " register rcv: {}", item.get_socket()->get_fd());
             io_uring_prep_recv(sqe, item.get_socket()->get_fd(),
                 nullptr, // buffer selected automatically from buffer queue
@@ -332,7 +337,7 @@ void IOUring::submit(IWorkItem& _item)
         int flags = 0;
         const auto& sp = item.get_raw_send_packet();
 
-        LOG_INFO(get_logger(), "sending {} bytes ({})", sp.size(),
+        LOG_DEBUG(get_logger(), "sending {} bytes ({})", sp.size(),
             (char*) sp.data());
         io_uring_prep_send(sqe, fd, sp.data(), sp.size(), flags);
 
@@ -476,11 +481,21 @@ void IOUring::call_connect_callback(
     }
 
     const int status = cqe->res;
-    const iuring::IPAddress addr(
-        work_item->m_buffer_for_uring, work_item->m_connect_sock_len);
+
+    sockaddr_in* sa = (sockaddr_in*) &work_item->m_buffer_for_uring;
+    iuring::IPAddress addr;
+    if (sa->sin_family == AF_INET)
+    {
+        addr = IPAddress(*sa);
+    }
+    else if (sa->sin_family == AF_INET6)
+    {
+        addr = IPAddress(*(sockaddr_in6*) sa);
+    }
+
     const ConnectResult new_conn{ .status = status, .m_address = addr };
 
-    LOG_INFO(get_logger(), "CONN- XQE - res = {}", status);
+    LOG_DEBUG(get_logger(), "CONN- XQE - res = {}", status);
 
     work_item->call_connect_callback(new_conn);
 }
@@ -812,14 +827,12 @@ void IOUring::submit_close(
 }
 
 
-std::shared_ptr<IOUring> self;
-
 void IOUring::sig_notifier_hostname_resolve(sigval_t sv)
 {
     void* ptr = sv.sival_ptr;
 
-    assert(self != nullptr);
-    self->trigger_hostname_resolve_callbacks(ptr);
+    assert(s_self != nullptr);
+    s_self->trigger_hostname_resolve_callbacks(ptr);
 }
 
 namespace
@@ -891,11 +904,25 @@ void IOUring::trigger_hostname_resolve_callbacks(void* ptr)
     }
 }
 
-void IOUring::resolve_hostname(
-    const std::string& hostname, const resolve_hostname_callback_func_t& handler)
+void IOUring::resolve_hostname(const std::string& hostname,
+    const resolve_hostname_callback_func_t& handler)
 {
-    self = shared_from_this();
+    // if hostname is an IP address, return it directly
+    if (auto addr_res = IPAddress::parse(hostname))
+    {
+        LOG_INFO(get_logger(), "IP address conversion suffices: {}, its {}", hostname.c_str(), addr_res.value().to_human_readable_string());
 
+        std::vector<IPAddress> addrs;
+        addrs.push_back(addr_res.value());
+        handler(addrs);
+        return;
+    }
+
+    LOG_INFO(get_logger(), "resolving hostname via DNS lookup {}", hostname.c_str());
+
+
+    s_self =
+        shared_from_this(); // safe as there should be only one IOUring instance
 
     for (auto& req : m_hostname_DNS_requests)
     {

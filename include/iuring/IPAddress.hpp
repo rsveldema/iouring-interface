@@ -17,8 +17,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <string>
+#include <expected>
+
 #include <slogger/ILogger.hpp>
 #include <slogger/StringUtils.hpp>
+#include <slogger/Error.hpp>
 
 #include <iuring/NetworkProtocols.hpp>
 
@@ -246,6 +250,9 @@ public:
     {
         return get_hash() < addr.get_hash();
     }
+
+    static std::expected<IPAddress, error::Error> parse(const std::string& ip_string);
+
 
 public:
     static in_addr string_to_ipv4_address(

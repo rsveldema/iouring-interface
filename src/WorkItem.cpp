@@ -1,5 +1,5 @@
-#include <iuring/IOUringInterface.hpp>
 #include "WorkItem.hpp"
+#include <iuring/IOUringInterface.hpp>
 
 namespace iuring
 {
@@ -33,8 +33,8 @@ void WorkItem::submit(const recv_callback_func_t& cb)
     m_io_ring->submit(*this);
 }
 
-void WorkItem::submit_packet(const DatagramSendParameters& params,
-    const send_callback_func_t& cb)
+void WorkItem::submit_packet(
+    const DatagramSendParameters& params, const send_callback_func_t& cb)
 {
     m_params = params;
     m_callback = cb;
@@ -59,8 +59,8 @@ void WorkItem::submit(const accept_callback_func_t& cb)
 void WorkItem::submit(
     const IPAddress& target, const connect_callback_func_t& cb)
 {
-    LOG_INFO(get_logger(), "connecting to {}",
-        target.to_human_readable_ip_string().c_str())
+    LOG_INFO(
+        get_logger(), "connecting to {}", target.to_human_readable_ip_string());
 
     m_connect_sock_len = target.size_sockaddr();
     assert(sizeof(m_buffer_for_uring) >= m_connect_sock_len);

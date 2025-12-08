@@ -2,12 +2,14 @@
 #include <cassert>
 #include <cerrno>
 #include <cstring>
+#include <expected>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
 #include <slogger/ILogger.hpp>
+#include <slogger/Error.hpp>
 
 #include <iuring/IPAddress.hpp>
 #include <iuring/MacAddress.hpp>
@@ -18,6 +20,25 @@ MacAddress::MacAddress(const std::string& mac)
 {
     std::sscanf(mac.c_str(), "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
         &bytes[0], &bytes[1], &bytes[2], &bytes[3], &bytes[4], &bytes[5]);
+}
+
+std::expected<IPAddress, error::Error> IPAddress::parse(const std::string& ip_string)
+{
+    sockaddr_in sa4;
+    if (inet_pton(AF_INET, ip_string.c_str(), &sa4.sin_addr) == 1)
+    {
+        sa4.sin_family = AF_INET;
+        return IPAddress(sa4);
+    }
+
+    sockaddr_in6 sa6;
+    if (inet_pton(AF_INET6, ip_string.c_str(), &sa6.sin6_addr) == 1)
+    {
+        sa6.sin6_family = AF_INET6;
+        return IPAddress(sa6);
+    }
+
+    return std::unexpected(error::Error::HOSTNAME_RESOLVE_FAILED);
 }
 
 const std::string MacAddress::to_string(const char sep) const
@@ -36,10 +57,10 @@ std::string IPAddress::to_human_readable_ip_string() const
 {
     std::array<char, 128> buffer;
 
-    if (get_ipv4())
+    if (auto* v = get_ipv4())
     {
         const char* source_name =
-            inet_ntop(AF_INET, data_addr(), buffer.data(), buffer.size());
+            inet_ntop(AF_INET, &v->sin_addr, buffer.data(), buffer.size());
         if (!source_name)
         {
             source_name = "<INVALID>";
@@ -47,10 +68,10 @@ std::string IPAddress::to_human_readable_ip_string() const
         return std::string(source_name);
     }
 
-    if (get_ipv6())
+    if (auto* v = get_ipv6())
     {
         const char* source_name =
-            inet_ntop(AF_INET6, data_addr(), buffer.data(), buffer.size());
+            inet_ntop(AF_INET6, &v->sin6_addr, buffer.data(), buffer.size());
         if (!source_name)
         {
             source_name = "<INVALID>";
@@ -68,25 +89,23 @@ std::string IPAddress::to_human_readable_string() const
     if (const auto* v = get_ipv4())
     {
         const char* source_name =
-            inet_ntop(AF_INET, data_addr(), buffer.data(), buffer.size());
+            inet_ntop(AF_INET, &v->sin_addr, buffer.data(), buffer.size());
         if (!source_name)
         {
             source_name = "<INVALID>";
         }
-        return std::string(source_name) + ", port " +
-            std::to_string(htons(v->sin_port));
+        return std::format("v4: {}: port {}", source_name, get_port());
     }
 
     if (const auto* v = get_ipv6())
     {
         const char* source_name =
-            inet_ntop(AF_INET6, data_addr(), buffer.data(), buffer.size());
+            inet_ntop(AF_INET6, &v->sin6_addr, buffer.data(), buffer.size());
         if (!source_name)
         {
             source_name = "<INVALID>";
         }
-        return std::string(source_name) + ", port" +
-            std::to_string(v->sin6_port);
+        return std::format("v6: {}: port {}", source_name, get_port());
     }
     return "?.?.?.?";
 }
