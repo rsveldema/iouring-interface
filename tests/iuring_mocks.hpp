@@ -4,11 +4,11 @@
 #include <gtest/gtest.h>
 
 #include <iuring/IOUringInterface.hpp>
+#include <iuring/ISocketFactory.hpp>
 
-namespace iuring
+namespace iuring::mocks
 {
-namespace mocks
-{
+
     class Socket : public ISocket
     {
     public:
@@ -22,6 +22,27 @@ namespace mocks
         MOCK_METHOD(void, join_multicast_group,
             (const std::string& ip_address, const std::string& source_iface),
             (override));
+    };
+
+    class SocketFactory : public ISocketFactory
+    {
+    public:
+        std::shared_ptr<ISocket> create_impl(SocketType type, SocketPortID port,
+            logging::ILogger& logger, SocketKind kind) override
+        {
+            // fd is not used for mocked sockets; use -1 as placeholder
+            return std::make_shared<Socket>(type, port, logger, kind, -1);
+        }
+
+        std::shared_ptr<ISocket> create_impl(
+            logging::ILogger& logger, const AcceptResult& res) override
+        {
+            // create a mock Socket reflecting the accepted connection
+            const auto port = res.m_address.get_port();
+            const auto type = SocketType::IPV4_TCP;
+            return std::make_shared<Socket>(type, port, logger,
+                SocketKind::SERVER_STREAM_SOCKET, res.m_new_fd);
+        }
     };
 
     class WorkItem : public IWorkItem
@@ -60,8 +81,7 @@ namespace mocks
                 close_callback_func_t handler),
             (override));
 
-        MOCK_METHOD(void, resolve_hostname, (const std::string& hostname, 
+        MOCK_METHOD(void, resolve_hostname, (const std::string& hostname,
             const resolve_hostname_callback_func_t& handler), (override));
     };
 } // namespace mocks
-} // namespace iuring

@@ -45,11 +45,6 @@ public:
     {
     }
 
-    static std::shared_ptr<ISocket> create_impl(SocketType type,
-        SocketPortID port, logging::ILogger& logger, SocketKind kind);
-
-    static std::shared_ptr<ISocket> create_impl(
-        logging::ILogger& logger, const AcceptResult& res);
 
     virtual ~ISocket() = default;
 
@@ -103,6 +98,16 @@ private:
     logging::ILogger& m_logger;
     SocketKind m_kind;
     int m_fd;
+
+private:
+    friend class SocketFactoryImpl;
+
+    static std::shared_ptr<ISocket> create_impl(SocketType type,
+        SocketPortID port, logging::ILogger& logger, SocketKind kind);
+
+    static std::shared_ptr<ISocket> create_impl(
+        logging::ILogger& logger, const AcceptResult& res);
+
 };
 
 } // namespace iuring
