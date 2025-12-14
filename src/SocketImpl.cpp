@@ -116,7 +116,7 @@ SocketImpl::SocketImpl(SocketType type, SocketPortID port,
 
     int set_option_on = 1;
     // it is important to do "reuse address" before bind, not after
-    int res = setsockopt(get_fd(), SOL_SOCKET, SO_REUSEADDR,
+    [[maybe_unused]] int res = setsockopt(get_fd(), SOL_SOCKET, SO_REUSEADDR,
         (char*) &set_option_on, sizeof(set_option_on));
     assert(res == 0);
 
