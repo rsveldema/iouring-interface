@@ -23,8 +23,6 @@ enum class SocketPortID : u_int16_t
 
     MDNS_PORT = 5353,
 
-    SAP_PORT = 9875,
-
     UNKNOWN = 0xffff,
 };
 } // namespace iuring
