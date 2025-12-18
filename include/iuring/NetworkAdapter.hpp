@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <optional>
+#include <string>
 
 #include <slogger/ILogger.hpp>
 
@@ -12,17 +12,22 @@ namespace iuring
 class NetworkAdapter
 {
 public:
-    NetworkAdapter(logging::ILogger& logger, const std::string& interface_name, bool tune)
-    : m_logger(logger),
-      m_interface_name(interface_name)
-    , m_tune(tune)
-    {}
+    NetworkAdapter(
+        logging::ILogger& logger, const std::string& interface_name, bool tune)
+        : m_logger(logger)
+        , m_interface_name(interface_name)
+        , m_tune(tune)
+    {
+    }
 
     void init();
 
     void tune();
 
-    const std::string& get_hostname() const { return m_hostname; }
+    const std::string& get_hostname() const
+    {
+        return m_hostname;
+    }
 
     void set_interface_ip4(const std::string& ip)
     {
@@ -41,13 +46,21 @@ public:
         return m_interface_name;
     }
 
-   std::optional<MacAddress> get_my_mac_address();
+    std::optional<MacAddress> get_my_mac_address();
 
-    const std::optional<std::string> get_interface_ip4() const{
+    /** @return the IP address we're currently bound to on our selected
+     * interface (eth0 in '--dev eth0')
+     */
+    const std::optional<std::string> get_interface_ip4() const
+    {
         return m_interface_ip4;
     }
 
-    const std::optional<std::string> get_interface_ip6() const{
+    /** @return the IP address we're currently bound to on our selected
+     * interface (eth0 in '--dev eth0')
+     */
+    const std::optional<std::string> get_interface_ip6() const
+    {
         return m_interface_ip6;
     }
 
@@ -69,4 +82,4 @@ private:
         return m_logger;
     }
 };
-}
+} // namespace iuring
