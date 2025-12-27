@@ -36,7 +36,9 @@ public:
         logging::ILogger& logger, SocketKind kind) override
     {
         // fd is not used for mocked sockets; use -1 as placeholder
-        return std::make_shared<Socket>(type, port, logger, kind, -1);
+        auto s = std::make_shared<Socket>(type, port, logger, kind, -1);
+        created_sockets.push_back( s );
+        return s;
     }
 
     std::shared_ptr<ISocket> create_impl(
@@ -45,9 +47,13 @@ public:
         // create a mock Socket reflecting the accepted connection
         const auto port = res.m_address.get_port();
         const auto type = SocketType::IPV4_TCP;
-        return std::make_shared<Socket>(
+        auto s = std::make_shared<Socket>(
             type, port, logger, SocketKind::SERVER_STREAM_SOCKET, res.m_new_fd);
+        created_sockets.push_back(s);
+        return s;
     }
+
+    std::vector<std::shared_ptr<Socket>> created_sockets;
 };
 
 class WorkItem : public IWorkItem
