@@ -87,20 +87,20 @@ namespace
 
         case SocketType::IPV4_UDP:
             fd = socket(AF_INET, SOCK_DGRAM | non_blocking_option, 0);
-            LOG_INFO(logger, "socket-v4 {} with dgram type!", fd);
+            LOG_DEBUG(logger, "socket-v4 {} with dgram type!", fd);
             break;
         case SocketType::IPV4_TCP:
             fd = socket(AF_INET, SOCK_STREAM | non_blocking_option, 0);
-            LOG_INFO(logger, "socket-v4 {} with stream type!", fd);
+            LOG_DEBUG(logger, "socket-v4 {} with stream type!", fd);
             break;
         case SocketType::IPV6_UDP:
             fd = socket(AF_INET6, SOCK_DGRAM | non_blocking_option, 0);
-            LOG_INFO(logger, "socket-v6 {} with dgram type!", fd);
+            LOG_DEBUG(logger, "socket-v6 {} with dgram type!", fd);
             abort();
             break;
         case SocketType::IPV6_TCP:
             fd = socket(AF_INET6, SOCK_STREAM | non_blocking_option, 0);
-            LOG_INFO(logger, "socket-v6 {} with stream type!", fd);
+            LOG_DEBUG(logger, "socket-v6 {} with stream type!", fd);
             break;
         }
 

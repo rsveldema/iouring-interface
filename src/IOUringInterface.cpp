@@ -29,7 +29,7 @@ void NetworkAdapter::init()
 
 void NetworkAdapter::tune()
 {
-    if (! m_tune)
+    if (!m_tune)
     {
         LOG_INFO(get_logger(), "not tuning interface settings");
         return;
@@ -63,18 +63,16 @@ bool NetworkAdapter::try_get_interface_ip()
             continue;
 
         const auto family = ifa->ifa_addr->sa_family;
+        if (std::string(ifa->ifa_name) == "lo")
+        {
+            continue;
+        }
         if (ifa->ifa_name != get_interface_name())
         {
             LOG_INFO(get_logger(), "skip: interface {}", ifa->ifa_name);
             continue;
         }
 
-        LOG_INFO(get_logger(), "FOUND INTERFACE: {} {} ({})", ifa->ifa_name,
-            (family == AF_PACKET)    ? "AF_PACKET" :
-                (family == AF_INET)  ? "AF_INET" :
-                (family == AF_INET6) ? "AF_INET6" :
-                                       "???",
-            family);
 
         switch (family)
         {
@@ -84,12 +82,20 @@ bool NetworkAdapter::try_get_interface_ip()
             success = true;
             break;
         }
+
         case AF_INET6: {
             IPAddress ip(*(sockaddr_in6*) ifa->ifa_addr);
             set_interface_ip6(ip.to_human_readable_ip_string());
             break;
         }
+
         default:
+            LOG_INFO(get_logger(), "FOUND INTERFACE: {} {} ({})", ifa->ifa_name,
+                (family == AF_PACKET)    ? "AF_PACKET" :
+                    (family == AF_INET)  ? "AF_INET" :
+                    (family == AF_INET6) ? "AF_INET6" :
+                                           "???",
+                family);
             break;
         }
     }
@@ -104,7 +110,7 @@ void NetworkAdapter::retrieve_interface_ip()
     // try_get_interface_ip();
     // set_interface_ip4("192.168.1.130");
 
-    while (! get_interface_ip4().has_value())
+    while (!get_interface_ip4().has_value())
     {
         try_get_interface_ip();
         std::this_thread::sleep_for(1s);

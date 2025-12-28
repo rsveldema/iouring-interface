@@ -45,7 +45,11 @@ std::shared_ptr<WorkItem> WorkPool::internal_alloc_work_item(
     if (m_free_ids.empty())
     {
         const auto id = m_work_items.size();
-        LOG_INFO(get_logger(), "  NEW: id = {} ({})", id, descr);
+        if (id > 64)
+        {
+            LOG_ERROR_ONCE(get_logger(), "potential FD leak!!!");
+        }
+        LOG_DEBUG(get_logger(), "  NEW: id = {} ({})", id, descr);
 
         auto ret = std::make_shared<WorkItem>(get_logger(), network, id, descr, socket);
         assert(!ret->is_free());
