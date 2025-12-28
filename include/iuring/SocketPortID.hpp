@@ -4,12 +4,17 @@ namespace iuring
 {
 enum class SocketPortID : u_int16_t
 {
+    SSH_PORT = 22,
+
     UNENCRYPTED_WEB_PORT = 80,
 
     PTP_PORT_EVENT = 319,
     PTP_PORT_GENERAL = 320,
 
     ENCRYPTED_WEB_PORT = 443,
+
+    // real-time streaming protocol
+    RTSP_PORT = 554,
 
     LAST_PRIVILEDGED_PORT_ID = 1024,
 
