@@ -268,12 +268,9 @@ private:
  * port to an IPAddress object
  */
 IPAddress create_sock_addr_in(
-    const char* addr, const SocketPortID port, logging::ILogger& logger);
+    const iuring::IPAddress& addr, const SocketPortID port, logging::ILogger& logger);
 
 } // namespace iuring
-
-
-
 
 template <>
 struct std::formatter<iuring::IPAddress> {
@@ -285,4 +282,3 @@ struct std::formatter<iuring::IPAddress> {
         return std::format_to(ctx.out(), "{}", c.to_human_readable_string());
     }
 };
-

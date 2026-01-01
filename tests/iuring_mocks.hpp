@@ -25,7 +25,7 @@ public:
 
     MOCK_METHOD(int, mcast_bind, (), (override));
     MOCK_METHOD(void, join_multicast_group,
-        (const std::string& ip_address, const std::string& source_iface),
+        (const iuring::IPAddress& ip_address, const iuring::IPAddress& source_iface),
         (override));
 };
 

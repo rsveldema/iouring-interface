@@ -230,19 +230,18 @@ int SocketImpl::mcast_bind()
 
 
 void SocketImpl::join_multicast_group(
-    const std::string& ip_address, const std::string& source_iface)
+    const iuring::IPAddress& ip_address,
+    const iuring::IPAddress& source_iface)
 {
     assert(get_fd() >= 0);
-    assert(!ip_address.empty());
-    assert(!source_iface.empty());
 
     LOG_DEBUG(get_logger(), "PTP: join_multicast_group: '{}', interface '{}'\n",
-        ip_address.c_str(), source_iface.c_str());
+        ip_address, source_iface);
 
     m_mreq.imr_multiaddr =
-        IPAddress::string_to_ipv4_address(ip_address, get_logger());
+        IPAddress::string_to_ipv4_address(ip_address.to_human_readable_ip_string(), get_logger());
     m_mreq.imr_interface =
-        IPAddress::string_to_ipv4_address(source_iface, get_logger());
+        IPAddress::string_to_ipv4_address(source_iface.to_human_readable_ip_string(), get_logger());
 
     if (int ret = setsockopt(
             get_fd(), IPPROTO_IP, IP_ADD_MEMBERSHIP, &m_mreq, sizeof(m_mreq));

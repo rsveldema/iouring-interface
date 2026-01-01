@@ -43,8 +43,8 @@ public:
 
     int mcast_bind() override;
 
-    void join_multicast_group(const std::string& ip_address,
-        const std::string& source_iface) override;
+    void join_multicast_group(const iuring::IPAddress& ip_address,
+        const iuring::IPAddress& source_iface) override;
     void leave_multicast_group();
 
 private:

@@ -63,7 +63,7 @@ public:
     virtual int mcast_bind() = 0;
 
     virtual void join_multicast_group(
-        const std::string& ip_address, const std::string& source_iface) = 0;
+        const iuring::IPAddress& ip_address, const iuring::IPAddress& source_iface) = 0;
 
     virtual ~ISocket() = default;
 

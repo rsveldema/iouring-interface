@@ -78,14 +78,14 @@ bool NetworkAdapter::try_get_interface_ip()
         {
         case AF_INET: {
             IPAddress ip(*(sockaddr_in*) ifa->ifa_addr);
-            set_interface_ip4(ip.to_human_readable_ip_string());
+            set_interface_ip4(ip);
             success = true;
             break;
         }
 
         case AF_INET6: {
             IPAddress ip(*(sockaddr_in6*) ifa->ifa_addr);
-            set_interface_ip6(ip.to_human_readable_ip_string());
+            set_interface_ip6(ip);
             break;
         }
 

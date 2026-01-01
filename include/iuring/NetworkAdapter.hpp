@@ -5,6 +5,8 @@
 
 #include <slogger/ILogger.hpp>
 
+#include <iuring/IPAddress.hpp>
+
 #include "MacAddress.hpp"
 
 namespace iuring
@@ -29,18 +31,21 @@ public:
         return m_hostname;
     }
 
-    void set_interface_ip4(const std::string& ip)
+    void set_interface_ip4(const iuring::IPAddress& ip)
     {
         m_interface_ip4 = ip;
         LOG_INFO(get_logger(), "interface IP4 set to {}", ip);
     }
 
-    void set_interface_ip6(const std::string& ip)
+    void set_interface_ip6(const iuring::IPAddress& ip)
     {
         m_interface_ip6 = ip;
         LOG_INFO(get_logger(), "interface IP6 set to {}", ip);
     }
 
+    /**
+     * returns eth line eth0, eth1, etc. or wlan0
+     */
     const std::string& get_interface_name() const
     {
         return m_interface_name;
@@ -51,7 +56,7 @@ public:
     /** @return the IP address we're currently bound to on our selected
      * interface (eth0 in '--dev eth0')
      */
-    const std::optional<std::string> get_interface_ip4() const
+    const std::optional<iuring::IPAddress> get_interface_ip4() const
     {
         return m_interface_ip4;
     }
@@ -59,7 +64,7 @@ public:
     /** @return the IP address we're currently bound to on our selected
      * interface (eth0 in '--dev eth0')
      */
-    const std::optional<std::string> get_interface_ip6() const
+    const std::optional<iuring::IPAddress> get_interface_ip6() const
     {
         return m_interface_ip6;
     }
@@ -68,8 +73,10 @@ private:
     std::string m_hostname;
     logging::ILogger& m_logger;
 
-    std::optional<std::string> m_interface_ip4;
-    std::optional<std::string> m_interface_ip6;
+    std::optional<iuring::IPAddress> m_interface_ip4;
+    std::optional<iuring::IPAddress> m_interface_ip6;
+
+    // eth0
     std::string m_interface_name;
     bool m_tune = true;
     std::optional<MacAddress> mac_opt;
