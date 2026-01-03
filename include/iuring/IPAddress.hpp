@@ -126,6 +126,11 @@ public:
     /** just the IP address is returned */
     std::string to_human_readable_ip_string() const;
 
+    std::string to_string() const
+    {
+        return to_human_readable_ip_string();
+    }
+
     const void* data_sockaddr() const
     {
         if (const auto* a = get_ipv4())
