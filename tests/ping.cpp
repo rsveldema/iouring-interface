@@ -27,8 +27,15 @@ void handle_packet_sent(const std::shared_ptr<iuring::IOUringInterface>& io,
         LOG_INFO(logger, "received: {}", msg.to_string());
 
         io->submit_close(socket, [&logger](const iuring::CloseResult& res) {
-            LOG_INFO(logger, "connection closed: {}", res.status);
-            assert(res.status == 0);
+            auto status = res.to_expected();
+            if (!status.has_value())
+            {
+                LOG_ERROR(logger, "failed to close connection: {}",
+                    static_cast<int>(status.error()));
+                return;
+            }
+            LOG_INFO(logger, "connection closed: {}", status.value());
+            assert(status.value() == 0);
             connection_has_been_closed = true;
         });
 
@@ -49,7 +56,14 @@ void handle_new_connection(const std::shared_ptr<iuring::IOUringInterface>& io,
     pkt.append("\r\n");
 
     wi->submit_stream_data([&logger, io, socket](const iuring::SendResult& result) {
-        LOG_INFO(logger, "packet sent successfully: {}", result.status);
+        auto status = result.to_expected();
+        if (!status.has_value())
+        {
+            LOG_ERROR(logger, "packet send failed: {}",
+                static_cast<int>(status.error()));
+            return;
+        }
+        LOG_INFO(logger, "packet sent successfully: {}", status.value());
         handle_packet_sent(io, socket, logger);
     });
 }
@@ -72,7 +86,15 @@ void do_http_ping(const iuring::IPAddress& ping_addr, logging::ILogger& logger,
         port, logger, iuring::SocketKind::UNICAST_CLIENT_SOCKET);
     io->submit_connect(
         socket, ping_addr, [io, socket, &logger](const iuring::ConnectResult& res) {
-            assert(res.status == 0);
+            auto status = res.to_expected();
+            if (!status.has_value())
+            {
+                LOG_ERROR(logger, "failed to connect: {}",
+                    static_cast<int>(status.error()));
+                return;
+            }
+            LOG_INFO(logger, "connected to: {}",
+                status.value().to_human_readable_string());
             handle_new_connection(io, socket, logger);
         });
 

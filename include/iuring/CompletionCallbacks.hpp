@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <expected>
 
 /**
  * @file CompletionCallbacks.hpp
@@ -18,20 +19,74 @@ struct AcceptResult
     IPAddress m_address;
 };
 
-struct SendResult
+class SendResult
 {
-    int status;
+public:
+    explicit SendResult(int s) : m_status(s) {}
+
+    std::expected<int, error::Error> to_expected() const
+    {
+        if (m_status >= 0)
+        {
+            return std::expected<int, error::Error>(m_status);
+        }
+        else
+        {
+            return std::unexpected<error::Error>(
+                error::errno_to_error(-m_status));
+        }
+    }
+
+private:
+    int m_status;
 };
 
-struct ConnectResult
+class ConnectResult
 {
-    int status;
+public:
+    ConnectResult(int status, const IPAddress& addr)
+        : m_status(status)
+        , m_address(addr)
+    {
+    }
+
+    std::expected<IPAddress, error::Error> to_expected() const
+    {
+        if (m_status >= 0)
+        {
+            return m_address;
+        }
+        else
+        {
+            return std::unexpected<error::Error>(
+                error::errno_to_error(-m_status));
+        }
+    }
+private:
+    int m_status;
     IPAddress m_address;
 };
 
-struct CloseResult
+class CloseResult
 {
-    int status;
+public:
+    explicit CloseResult(int s) : m_status(s) {}
+
+    std::expected<int, error::Error> to_expected() const
+    {
+        if (m_status >= 0)
+        {
+            return std::expected<int, error::Error>(m_status);
+        }
+        else
+        {
+            return std::unexpected<error::Error>(
+                error::errno_to_error(-m_status));
+        }
+    }
+
+private:
+    int m_status;
 };
 
 class ReceivedMessage;

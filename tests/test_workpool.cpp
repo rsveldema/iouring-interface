@@ -85,7 +85,9 @@ TEST_F(TestWorkPool, test_wp_close)
     auto item = wp.alloc_close_work_item(
         socket, io,
         [](const iuring::CloseResult& result) {
-            ASSERT_EQ(result.status, 12321);
+            auto status = result.to_expected();
+            ASSERT_TRUE(status.has_value());
+            ASSERT_EQ(status.value(), 12321);
         },
         "test-close");
 
@@ -103,12 +105,13 @@ TEST_F(TestWorkPool, test_wp_connect)
 
         auto* k = dynamic_cast<iuring::WorkItem *>(&item);
         ASSERT_NE(k, nullptr);
-        iuring::ConnectResult ret;
-        ret.status = 12321;
-        ret.m_address = iuring::IPAddress(
+
+        auto addr = iuring::IPAddress(
             iuring::IPAddress::string_to_ipv4_address("9.8.7.6", logger),
             iuring::SocketPortID::ENCRYPTED_WEB_PORT
         );
+
+        iuring::ConnectResult ret(0, addr);
         k->call_connect_callback(ret);
     });
 
@@ -116,9 +119,11 @@ TEST_F(TestWorkPool, test_wp_connect)
         iuring::IPAddress(  iuring::IPAddress::string_to_ipv4_address("1.2.3.4", logger),
                 iuring::SocketPortID::ENCRYPTED_WEB_PORT ),
         socket, io,
-        [](const iuring::ConnectResult& result) {
-            ASSERT_EQ(result.status, 12321);
-            ASSERT_EQ(result.m_address.to_human_readable_ip_string(), "9.8.7.6");
+        [](const iuring::ConnectResult& connection_result) {
+            const auto status = connection_result.to_expected();
+            ASSERT_TRUE(status.has_value());
+            const auto result = status.value();
+            ASSERT_EQ(result.to_human_readable_ip_string(), "9.8.7.6");
         },
         "test-conn");
 

@@ -457,8 +457,8 @@ void IOUring::call_send_callback(
         {
             LOG_ERROR(
                 get_logger(), "NB: This requires a kernel version >= 6.0\n");
+            return;
         }
-        return;
     }
 
     work_item->call_send_callback(cqe->res);
@@ -476,8 +476,8 @@ void IOUring::call_connect_callback(
         {
             LOG_ERROR(
                 get_logger(), "NB: This requires a kernel version >= 6.0\n");
+            return;
         }
-        return;
     }
 
     const int status = cqe->res;
@@ -493,7 +493,7 @@ void IOUring::call_connect_callback(
         addr = IPAddress(*(sockaddr_in6*) sa);
     }
 
-    const ConnectResult new_conn{ .status = status, .m_address = addr };
+    const ConnectResult new_conn(status, addr);
 
     LOG_DEBUG(get_logger(), "CONN- XQE - res = {}", status);
 
@@ -513,8 +513,8 @@ void IOUring::call_accept_callback(
         {
             LOG_ERROR(
                 get_logger(), "NB: This requires a kernel version >= 6.0\n");
+            return;
         }
-        return;
     }
 
     const int fd = cqe->res;
@@ -523,7 +523,7 @@ void IOUring::call_accept_callback(
 
     const iuring::IPAddress addr(
         work_item->m_buffer_for_uring, work_item->m_accept_sock_len);
-    const AcceptResult new_conn{ .m_new_fd = fd, .m_address = addr };
+    const AcceptResult new_conn(fd, addr);
 
     work_item->call_accept_callback(new_conn);
 }
